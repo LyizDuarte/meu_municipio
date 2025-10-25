@@ -7,32 +7,38 @@ const {
   getAllPosts,
   updatePost,
   deletePost,
-  getPostsByUser
+  getPostsByUser,
+  addComment,
+  getComments,
+  deleteComment,
+  supportPost,
+  unsupportPost,
+  sharePost,
 } = require('../controllers/postController');
 const authMiddleware = require('../middlewares/auth');
 const { uploadMiddleware } = require('../middlewares/upload');
 
 // Rotas públicas
-// GET /api/posts - Listar todos os posts (com filtros opcionais)
 router.get('/', getAllPosts);
-
-// GET /api/posts/:id - Obter um post específico
 router.get('/:id', getPost);
-
-// GET /api/posts/user/:id_usuario - Obter posts de um usuário específico
 router.get('/user/:id_usuario', getPostsByUser);
 
-// Rotas protegidas (requerem autenticação)
-// POST /api/posts - Criar novo post (com upload de mídia)
+// Comentários
+router.get('/:id/comments', getComments); // listar comentários de um post
+router.post('/:id/comments', authMiddleware, addComment); // comentar em um post
+router.delete('/:id/comments/:commentId', authMiddleware, deleteComment); // remover comentário próprio
+
+// Apoios
+router.post('/:id/support', authMiddleware, supportPost); // apoiar (curtir/descurtir)
+router.delete('/:id/support', authMiddleware, unsupportPost); // remover apoio
+
+// Compartilhamento
+router.post('/:id/share', authMiddleware, sharePost);
+
+// Rotas protegidas relacionadas a posts
 router.post('/', authMiddleware, uploadMiddleware, createPost);
-
-// GET /api/posts/my/posts - Obter meus posts
 router.get('/my/posts', authMiddleware, getMyPosts);
-
-// PUT /api/posts/:id - Atualizar post
 router.put('/:id', authMiddleware, updatePost);
-
-// DELETE /api/posts/:id - Deletar post
 router.delete('/:id', authMiddleware, deletePost);
 
 module.exports = router;
