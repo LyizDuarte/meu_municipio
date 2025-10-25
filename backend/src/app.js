@@ -13,6 +13,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Servir arquivos estáticos da pasta uploads
+app.use('/uploads', express.static('src/uploads'));
+
 // Rota principal
 const routes = require('./routes');
 app.use('/api', routes);
