@@ -94,7 +94,18 @@ async function getPostWithDetails(id_post) {
     err.status = 404;
     throw err;
   }
-  return post;
+  // Contagens
+  const comentariosTotal = await countComentarios(id_post);
+  const apoiosCounts = await countApoios(id_post);
+  const compartilhamentosTotal = await countCompartilhamentos(id_post);
+  return {
+    post,
+    metrics: {
+      comentarios: comentariosTotal,
+      apoios: apoiosCounts,
+      compartilhamentos: compartilhamentosTotal,
+    },
+  };
 }
 
 async function getUserPosts(id_usuario, page = 1, limit = 10) {
