@@ -4,7 +4,13 @@ const {
   getUserPosts,
   getAllPostsWithFilters,
   updatePostData,
-  deletePostById
+  deletePostById,
+  addCommentToPost,
+  listCommentsForPost,
+  deleteCommentFromPost,
+  supportPostByUser,
+  unsupportPostByUser,
+  sharePostByUser,
 } = require('../services/postService');
 
 async function createPost(req, res) {
@@ -157,6 +163,81 @@ async function getPostsByUser(req, res) {
   }
 }
 
+async function addComment(req, res) {
+  try {
+    const { id } = req.params; // id_post
+    const id_usuario = req.user.id_usuario;
+    const { conteudo, id_comentario_pai } = req.body;
+    const comentario = await addCommentToPost({ id_post: parseInt(id), id_usuario, conteudo, id_comentario_pai });
+    return res.status(201).json({ message: 'Comentário adicionado', comentario });
+  } catch (err) {
+    const status = err.status || 500;
+    return res.status(status).json({ message: err.message || 'Erro interno' });
+  }
+}
+
+async function getComments(req, res) {
+  try {
+    const { id } = req.params; // id_post
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const { comentarios, pagination } = await listCommentsForPost(parseInt(id), page, limit);
+    return res.status(200).json({ comentarios, pagination });
+  } catch (err) {
+    const status = err.status || 500;
+    return res.status(status).json({ message: err.message || 'Erro interno' });
+  }
+}
+
+async function deleteComment(req, res) {
+  try {
+    const { id, commentId } = req.params;
+    const id_usuario = req.user.id_usuario;
+    await deleteCommentFromPost(parseInt(commentId), id_usuario);
+    return res.status(200).json({ message: 'Comentário removido' });
+  } catch (err) {
+    const status = err.status || 500;
+    return res.status(status).json({ message: err.message || 'Erro interno' });
+  }
+}
+
+async function supportPost(req, res) {
+  try {
+    const { id } = req.params; // id_post
+    const id_usuario = req.user.id_usuario;
+    const { tipo_apoio = 'curtir' } = req.body;
+    const result = await supportPostByUser(parseInt(id), id_usuario, tipo_apoio);
+    return res.status(200).json({ message: 'Apoio registrado', ...result });
+  } catch (err) {
+    const status = err.status || 500;
+    return res.status(status).json({ message: err.message || 'Erro interno' });
+  }
+}
+
+async function unsupportPost(req, res) {
+  try {
+    const { id } = req.params; // id_post
+    const id_usuario = req.user.id_usuario;
+    const result = await unsupportPostByUser(parseInt(id), id_usuario);
+    return res.status(200).json({ message: 'Apoio removido', ...result });
+  } catch (err) {
+    const status = err.status || 500;
+    return res.status(status).json({ message: err.message || 'Erro interno' });
+  }
+}
+
+async function sharePost(req, res) {
+  try {
+    const { id } = req.params; // id_post
+    const id_usuario = req.user.id_usuario;
+    const result = await sharePostByUser(parseInt(id), id_usuario);
+    return res.status(200).json({ message: 'Compartilhamento registrado', ...result });
+  } catch (err) {
+    const status = err.status || 500;
+    return res.status(status).json({ message: err.message || 'Erro interno' });
+  }
+}
+
 module.exports = {
   createPost,
   getPost,
@@ -164,5 +245,11 @@ module.exports = {
   getAllPosts,
   updatePost,
   deletePost,
-  getPostsByUser
+  getPostsByUser,
+  addComment,
+  getComments,
+  deleteComment,
+  supportPost,
+  unsupportPost,
+  sharePost,
 };
