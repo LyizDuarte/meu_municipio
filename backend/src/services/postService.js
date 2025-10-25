@@ -8,6 +8,9 @@ const {
   deletePost 
 } = require('../models/postModel');
 const { getMediaUrl } = require('../middlewares/upload');
+const { addComentario, listComentariosByPost, deleteComentario, countComentarios } = require('../models/comentarioModel');
+const { addApoio, removeApoio, findApoioByUserPost, countApoios } = require('../models/apoioModel');
+const { addCompartilhamento, countCompartilhamentos } = require('../models/compartilhamentoModel');
 
 async function createPostWithMidias({ id_usuario, id_categoria, id_cidade, tipo_post, titulo, descricao, local_latitude, local_longitude, midias = [] }) {
   // Validações básicas
@@ -247,5 +250,81 @@ module.exports = {
   getUserPosts,
   getAllPostsWithFilters,
   updatePostData,
-  deletePostById
+  deletePostById,
+  // Comentários
+  async addCommentToPost({ id_post, id_usuario, conteudo, id_comentario_pai = null }) {
+    if (!conteudo || conteudo.trim().length === 0) {
+      const err = new Error('Conteúdo do comentário não pode estar vazio');
+      err.status = 400;
+      throw err;
+    }
+    // Verifica se o post existe
+    const post = await findPostById(id_post);
+    if (!post) {
+      const err = new Error('Post não encontrado');
+      err.status = 404;
+      throw err;
+    }
+    const comentario = await addComentario({ id_usuario, id_post, conteudo: conteudo.trim(), id_comentario_pai });
+    return comentario;
+  },
+  async listCommentsForPost(id_post, page = 1, limit = 10) {
+    const post = await findPostById(id_post);
+    if (!post) {
+      const err = new Error('Post não encontrado');
+      err.status = 404;
+      throw err;
+    }
+    const offset = (page - 1) * limit;
+    const comentarios = await listComentariosByPost(id_post, limit, offset);
+    const total = await countComentarios(id_post);
+    return { comentarios, pagination: { page, limit, total } };
+  },
+  async deleteCommentFromPost(id_comentario, id_usuario) {
+    const ok = await deleteComentario(id_comentario, id_usuario);
+    if (!ok) {
+      const err = new Error('Comentário não encontrado ou você não tem permissão');
+      err.status = 404;
+      throw err;
+    }
+    return true;
+  },
+  // Apoios
+  async supportPostByUser(id_post, id_usuario, tipo_apoio = 'curtir') {
+    const post = await findPostById(id_post);
+    if (!post) {
+      const err = new Error('Post não encontrado');
+      err.status = 404;
+      throw err;
+    }
+    await addApoio(id_usuario, id_post, tipo_apoio);
+    const counts = await countApoios(id_post);
+    const current = await findApoioByUserPost(id_usuario, id_post);
+    return { apoio_atual: current?.tipo_apoio || null, contagem: counts };
+  },
+  async unsupportPostByUser(id_post, id_usuario) {
+    const post = await findPostById(id_post);
+    if (!post) {
+      const err = new Error('Post não encontrado');
+      err.status = 404;
+      throw err;
+    }
+    await removeApoio(id_usuario, id_post);
+    const counts = await countApoios(id_post);
+    return { apoio_atual: null, contagem: counts };
+  },
+  // Compartilhamento
+  async sharePostByUser(id_post, id_usuario, frontendBaseUrl = process.env.FRONTEND_URL) {
+    const post = await findPostById(id_post);
+    if (!post) {
+      const err = new Error('Post não encontrado');
+      err.status = 404;
+      throw err;
+    }
+    await addCompartilhamento(id_usuario, id_post);
+    const total = await countCompartilhamentos(id_post);
+    const apiUrl = `${process.env.API_URL || 'http://localhost:3000'}/api/posts/${id_post}`;
+    const webUrl = frontendBaseUrl ? `${frontendBaseUrl}/posts/${id_post}` : apiUrl;
+    return { total_compartilhamentos: total, share_url: webUrl };
+  }
 };
