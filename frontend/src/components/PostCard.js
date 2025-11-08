@@ -2,7 +2,10 @@ import React from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
-export default function PostCard({ post }) {
+export default function PostCard({ post, onSupport, onComment, onShare }) {
+  const handleSupport = onSupport || (() => {});
+  const handleComment = onComment || (() => {});
+  const handleShare = onShare || (() => {});
   return (
     <View style={styles.card}>
       <View style={styles.headerRow}>
@@ -34,9 +37,9 @@ export default function PostCard({ post }) {
       </View>
 
       <View style={styles.footerActions}>
-        <TouchableOpacity style={styles.actionBtn}><MaterialIcons name="thumb-up" size={18} color="#0a4b9e" /><Text style={styles.actionText}>Apoiar</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.actionBtn}><MaterialIcons name="chat-bubble" size={18} color="#0a4b9e" /><Text style={styles.actionText}>Comentar</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.actionBtn}><MaterialIcons name="share" size={18} color="#0a4b9e" /><Text style={styles.actionText}>Compartilhar</Text></TouchableOpacity>
+        <TouchableOpacity style={styles.actionBtn} onPress={handleSupport}><MaterialIcons name="thumb-up" size={18} color="#0a4b9e" /><Text style={styles.actionText}>Apoiar</Text></TouchableOpacity>
+        <TouchableOpacity style={styles.actionBtn} onPress={handleComment}><MaterialIcons name="chat-bubble" size={18} color="#0a4b9e" /><Text style={styles.actionText}>Comentar</Text></TouchableOpacity>
+        <TouchableOpacity style={styles.actionBtn} onPress={handleShare}><MaterialIcons name="share" size={18} color="#0a4b9e" /><Text style={styles.actionText}>Compartilhar</Text></TouchableOpacity>
       </View>
     </View>
   );

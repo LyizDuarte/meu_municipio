@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native
 import { MaterialIcons } from '@expo/vector-icons';
 import PostCard from '../components/PostCard';
 import { fetchCidadeNomeById } from '../api/client';
+import { listPosts, supportPost, sharePost } from '../api/posts';
 
 const MOCK_POSTS = [
   {
@@ -39,6 +40,8 @@ const MOCK_POSTS = [
 
 export default function FeedScreen({ user }) {
   const [cityName, setCityName] = React.useState('Sua Cidade');
+  const [posts, setPosts] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
     let mounted = true;
@@ -51,6 +54,44 @@ export default function FeedScreen({ user }) {
     loadCityName();
     return () => { mounted = false; };
   }, [user]);
+
+  React.useEffect(() => {
+    let mounted = true;
+    async function loadPosts() {
+      setLoading(true);
+      try {
+        const res = await listPosts({ id_cidade: user?.id_cidade });
+        const items = Array.isArray(res)
+          ? res
+          : (Array.isArray(res?.posts) ? res.posts : []);
+        if (mounted) setPosts(items.length > 0 ? items : MOCK_POSTS);
+      } catch (e) {
+        if (mounted) setPosts(MOCK_POSTS);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+    loadPosts();
+    return () => { mounted = false; };
+  }, [user]);
+
+  const handleSupport = async (item) => {
+    try {
+      await supportPost(item.id);
+      setPosts((prev) => prev.map((p) => p.id === item.id ? { ...p, apoios: (p.apoios || 0) + 1 } : p));
+    } catch (_) {}
+  };
+
+  const handleShare = async (item) => {
+    try {
+      await sharePost(item.id);
+      setPosts((prev) => prev.map((p) => p.id === item.id ? { ...p, compartilhamentos: (p.compartilhamentos || 0) + 1 } : p));
+    } catch (_) {}
+  };
+
+  const handleComment = (item) => {
+    // Integração futura: abrir composer de comentários
+  };
   return (
     <View style={styles.container}>
       <View style={styles.topBar}>
@@ -60,9 +101,32 @@ export default function FeedScreen({ user }) {
       </View>
       <FlatList
         contentContainerStyle={{ padding: 16 }}
-        data={MOCK_POSTS}
+        data={posts}
         keyExtractor={(item) => String(item.id)}
-        renderItem={({ item }) => <PostCard post={item} />}
+        refreshing={loading}
+        onRefresh={() => {
+          // força recarga
+          const u = user;
+          (async () => {
+            try {
+              const res = await listPosts({ id_cidade: u?.id_cidade });
+              const items = Array.isArray(res)
+                ? res
+                : (Array.isArray(res?.posts) ? res.posts : []);
+              setPosts(items.length > 0 ? items : MOCK_POSTS);
+            } catch (e) {
+              setPosts(MOCK_POSTS);
+            }
+          })();
+        }}
+        renderItem={({ item }) => (
+          <PostCard
+            post={item}
+            onSupport={() => handleSupport(item)}
+            onComment={() => handleComment(item)}
+            onShare={() => handleShare(item)}
+          />
+        )}
       />
     </View>
   );
