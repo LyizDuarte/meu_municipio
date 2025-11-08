@@ -19,16 +19,20 @@ export async function fetchCidadesByEstado(id_estado) {
 export async function fetchCidadeNomeById(id_cidade) {
   if (!id_cidade) return null;
   try {
-    const { data: estadosRes } = await api.get('/locations/estados');
-    const estados = estadosRes?.estados || [];
-    for (const estado of estados) {
-      const { data: cidadesRes } = await api.get('/locations/cidades', { params: { id_estado: estado.id_estado } });
-      const cidades = cidadesRes?.cidades || [];
-      const encontrada = cidades.find((c) => c.id_cidade === id_cidade);
-      if (encontrada) return encontrada.nome_cidade;
-    }
-    return null;
+    const { data } = await api.get(`/locations/cidade/${id_cidade}`);
+    return data?.cidade?.nome_cidade || null;
   } catch (e) {
+    // Fallback silencioso: tenta via listagem caso endpoint não disponível
+    try {
+      const { data: estadosRes } = await api.get('/locations/estados');
+      const estados = estadosRes?.estados || [];
+      for (const estado of estados) {
+        const { data: cidadesRes } = await api.get('/locations/cidades', { params: { id_estado: estado.id_estado } });
+        const cidades = cidadesRes?.cidades || [];
+        const encontrada = cidades.find((c) => c.id_cidade === id_cidade);
+        if (encontrada) return encontrada.nome_cidade;
+      }
+    } catch (_) {}
     return null;
   }
 }
