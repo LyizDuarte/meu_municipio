@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Image } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { fetchEstados, fetchCidadesByEstado } from '../api/client';
 import { register } from '../api/auth';
@@ -80,6 +80,11 @@ export default function RegisterScreen({ onGoToLogin }) {
 
   return (
     <View style={styles.container}>
+      <View style={styles.header}>
+        <Image source={require('../../assets/meuMunicipioLogo.jpg')} style={styles.logo} />
+        <Text style={styles.headerTitle}>Meu Município</Text>
+        <Text style={styles.headerSubtitle}>Campos marcados com (*) são obrigatórios</Text>
+      </View>
       <Text style={styles.title}>Cadastro</Text>
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -142,6 +147,10 @@ export default function RegisterScreen({ onGoToLogin }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 24, backgroundColor: '#fff' },
+  header: { alignItems: 'center', backgroundColor: '#0a4b9e', paddingVertical: 32, marginHorizontal: -24, marginTop: -24, marginBottom: 24 },
+  logo: { width: 72, height: 72, borderRadius: 36, marginBottom: 8 },
+  headerTitle: { color: '#fff', fontSize: 20, fontWeight: '700' },
+  headerSubtitle: { color: '#e3ecfa', fontSize: 12, marginTop: 4 },
   title: { fontSize: 24, fontWeight: '600', marginBottom: 8, textAlign: 'center' },
   error: { color: '#c00', marginBottom: 8, textAlign: 'center' },
   label: { fontSize: 14, marginBottom: 8 },

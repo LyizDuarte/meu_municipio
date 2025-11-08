@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
 import { login } from '../api/auth';
 import { setToken } from '../storage/token';
 
-export default function LoginScreen({ onGoToRegister }) {
+export default function LoginScreen({ onGoToRegister, onLoggedIn }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -17,6 +17,7 @@ export default function LoginScreen({ onGoToRegister }) {
       if (res?.token) {
         await setToken(res.token);
         Alert.alert('Sucesso', 'Login realizado! Token armazenado.');
+        onLoggedIn?.(res.user);
       } else {
         Alert.alert('Erro', res?.message || 'Falha ao realizar login');
       }
@@ -27,6 +28,11 @@ export default function LoginScreen({ onGoToRegister }) {
 
   return (
     <View style={styles.container}>
+      <View style={styles.header}>
+        <Image source={require('../../assets/meuMunicipioLogo.jpg')} style={styles.logo} />
+        <Text style={styles.headerTitle}>Meu Município</Text>
+        <Text style={styles.headerSubtitle}>Acesse sua conta para continuar</Text>
+      </View>
       <Text style={styles.title}>Login</Text>
 
       <Text style={styles.label}>E-mail</Text>
@@ -60,7 +66,11 @@ export default function LoginScreen({ onGoToRegister }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, backgroundColor: '#fff', justifyContent: 'center' },
+  container: { flex: 1, padding: 24, backgroundColor: '#fff' },
+  header: { alignItems: 'center', backgroundColor: '#0a4b9e', paddingVertical: 32, marginHorizontal: -24, marginTop: -24, marginBottom: 24 },
+  logo: { width: 72, height: 72, borderRadius: 36, marginBottom: 8 },
+  headerTitle: { color: '#fff', fontSize: 20, fontWeight: '700' },
+  headerSubtitle: { color: '#e3ecfa', fontSize: 12, marginTop: 4 },
   title: { fontSize: 24, fontWeight: '600', marginBottom: 16, textAlign: 'center' },
   label: { fontSize: 14, marginBottom: 8 },
   input: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, marginBottom: 16 },
