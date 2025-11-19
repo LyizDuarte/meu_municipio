@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import PostCard from '../components/PostCard';
 import { fetchCidadeNomeById } from '../api/client';
@@ -38,7 +39,7 @@ const MOCK_POSTS = [
   },
 ];
 
-export default function FeedScreen({ user }) {
+export default function FeedScreen({ user, onCreate }) {
   const [cityName, setCityName] = React.useState('Sua Cidade');
   const [posts, setPosts] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
@@ -93,11 +94,11 @@ export default function FeedScreen({ user }) {
     // Integração futura: abrir composer de comentários
   };
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top','bottom']}>
       <View style={styles.topBar}>
         <TouchableOpacity style={styles.iconBtn}><MaterialIcons name="filter-list" size={22} color="#0a4b9e" /></TouchableOpacity>
         <Text style={styles.topTitle}>{`Feed ${cityName}`}</Text>
-        <TouchableOpacity style={styles.iconBtn}><MaterialIcons name="add" size={22} color="#0a4b9e" /></TouchableOpacity>
+        <TouchableOpacity style={styles.iconBtn} onPress={onCreate}><MaterialIcons name="add" size={22} color="#0a4b9e" /></TouchableOpacity>
       </View>
       <FlatList
         contentContainerStyle={{ padding: 16 }}
@@ -128,7 +129,7 @@ export default function FeedScreen({ user }) {
           />
         )}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 

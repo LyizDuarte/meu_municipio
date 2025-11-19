@@ -1,9 +1,11 @@
 import React from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
 import FeedScreen from './src/screens/FeedScreen';
+import CreatePostScreen from './src/screens/CreatePostScreen';
 import { getToken } from './src/storage/token';
 import { setAuthToken } from './src/api/client';
 import { me } from './src/api/auth';
@@ -32,19 +34,31 @@ export default function App() {
     return () => { mounted = false; };
   }, []);
   return (
-    <View style={styles.container}>
+    <SafeAreaProvider>
+      <SafeAreaView style={styles.container} edges={['top','bottom']}>
       {screen === 'login' && (
         <LoginScreen onGoToRegister={() => setScreen('register')} onLoggedIn={(u) => { setUser(u); setScreen('feed'); }} />
       )}
       {screen === 'register' && (
         <RegisterScreen onGoToLogin={() => setScreen('login')} />
       )}
-      {screen === 'feed' && <FeedScreen user={user} />}
-      <StatusBar style="auto" />
-    </View>
+      {screen === 'feed' && <FeedScreen user={user} onCreate={() => setScreen('create')} />}
+      {screen === 'create' && (
+        <CreatePostScreen
+          user={user}
+          onClose={() => setScreen('feed')}
+          onPublished={() => {
+            // Em uma próxima etapa podemos acionar reload do Feed via contexto/prop
+            setScreen('feed');
+          }}
+        />
+      )}
+      <StatusBar style="dark" />
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: '#f2f6fb' },
 });

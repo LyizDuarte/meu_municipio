@@ -1,7 +1,21 @@
 import axios from 'axios';
 import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 
-const baseURL = (Constants?.expoConfig?.extra?.apiBaseUrl) || 'http://localhost:3000/api';
+// Define baseURL com suporte ao Android Emulator.
+// Se extra.apiBaseUrl estiver setado com localhost, mapeia para 10.0.2.2 no Android.
+function resolveBaseURL() {
+  const extraBase = Constants?.expoConfig?.extra?.apiBaseUrl;
+  if (Platform.OS === 'android') {
+    if (!extraBase) return 'http://10.0.2.2:3000/api';
+    return extraBase
+      .replace('localhost', '10.0.2.2')
+      .replace('127.0.0.1', '10.0.2.2');
+  }
+  return extraBase || 'http://localhost:3000/api';
+}
+
+const baseURL = resolveBaseURL();
 
 export const api = axios.create({ baseURL });
 

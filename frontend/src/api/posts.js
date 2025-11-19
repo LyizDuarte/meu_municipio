@@ -5,6 +5,12 @@ export async function listPosts(params = {}) {
   return data; // { posts, pagination }
 }
 
+export async function createPost(payload) {
+  // payload: { tipo, categoria, titulo, descricao, fotos, latitude, longitude }
+  const { data } = await api.post('/posts', payload);
+  return data; // { post }
+}
+
 export async function supportPost(id, tipo_apoio = 'curtir') {
   const { data } = await api.post(`/posts/${id}/support`, { tipo_apoio });
   return data; // { message, ...result }

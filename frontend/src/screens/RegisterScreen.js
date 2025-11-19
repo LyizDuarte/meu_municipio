@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Image, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Picker } from '@react-native-picker/picker';
 import { fetchEstados, fetchCidadesByEstado } from '../api/client';
 import { register } from '../api/auth';
@@ -79,75 +80,85 @@ export default function RegisterScreen({ onGoToLogin }) {
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Image source={require('../../assets/meuMunicipioLogo.jpg')} style={styles.logo} />
-        <Text style={styles.headerTitle}>Meu Município</Text>
-        <Text style={styles.headerSubtitle}>Campos marcados com (*) são obrigatórios</Text>
-      </View>
-      <Text style={styles.title}>Cadastro</Text>
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-
-      <Text style={styles.label}>Nome Completo *</Text>
-      <TextInput style={styles.input} value={nome} onChangeText={setNome} placeholder="Digite seu nome" />
-
-      <Text style={styles.label}>E-mail *</Text>
-      <TextInput style={styles.input} value={email} onChangeText={setEmail} placeholder="seu@email.com" keyboardType="email-address" autoCapitalize="none" />
-
-      <Text style={styles.label}>Estado *</Text>
-      {loadingEstados ? (
-        <ActivityIndicator />
-      ) : (
-        <View style={styles.pickerWrapper}>
-          <Picker selectedValue={idEstado} onValueChange={(v) => setIdEstado(v)}>
-            <Picker.Item label="Selecione um estado" value={undefined} />
-            {estados.map((e) => (
-              <Picker.Item key={e.id_estado} label={e.nome_estado} value={e.id_estado} />
-            ))}
-          </Picker>
+    <SafeAreaView style={styles.container} edges={['top','bottom']}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 24 }}
+        keyboardShouldPersistTaps="handled"
+        nestedScrollEnabled
+      >
+        <View style={styles.header}>
+          <Image source={require('../../assets/meuMunicipioLogo.jpg')} style={styles.logo} />
+          <Text style={styles.headerTitle}>Meu Município</Text>
+          <Text style={styles.headerSubtitle}>Campos marcados com (*) são obrigatórios</Text>
         </View>
-      )}
+        <View style={styles.content}>
+          <Text style={styles.title}>Cadastro</Text>
+          {error ? <Text style={styles.error}>{error}</Text> : null}
 
-      <Text style={styles.label}>Cidade *</Text>
-      {loadingCidades ? (
-        <ActivityIndicator />
-      ) : (
-        <View style={styles.pickerWrapper}>
-          <Picker selectedValue={idCidade} enabled={!!idEstado} onValueChange={(v) => setIdCidade(v)}>
-            <Picker.Item label={idEstado ? 'Selecione uma cidade' : 'Selecione um estado primeiro'} value={undefined} />
-            {cidades.map((c) => (
-              <Picker.Item key={c.id_cidade} label={c.nome_cidade} value={c.id_cidade} />
-            ))}
-          </Picker>
+          <Text style={styles.label}>Nome Completo *</Text>
+          <TextInput style={styles.input} value={nome} onChangeText={setNome} placeholder="Digite seu nome" />
+
+          <Text style={styles.label}>E-mail *</Text>
+          <TextInput style={styles.input} value={email} onChangeText={setEmail} placeholder="seu@email.com" keyboardType="email-address" autoCapitalize="none" />
+
+          <Text style={styles.label}>Estado *</Text>
+          {loadingEstados ? (
+            <ActivityIndicator />
+          ) : (
+            <View style={styles.pickerWrapper}>
+              <Picker selectedValue={idEstado} onValueChange={(v) => setIdEstado(v)}>
+                <Picker.Item label="Selecione um estado" value={undefined} />
+                {estados.map((e) => (
+                  <Picker.Item key={e.id_estado} label={e.nome_estado} value={e.id_estado} />
+                ))}
+              </Picker>
+            </View>
+          )}
+
+          <Text style={styles.label}>Cidade *</Text>
+          {loadingCidades ? (
+            <ActivityIndicator />
+          ) : (
+            <View style={styles.pickerWrapper}>
+              <Picker selectedValue={idCidade} enabled={!!idEstado} onValueChange={(v) => setIdCidade(v)}>
+                <Picker.Item label={idEstado ? 'Selecione uma cidade' : 'Selecione um estado primeiro'} value={undefined} />
+                {cidades.map((c) => (
+                  <Picker.Item key={c.id_cidade} label={c.nome_cidade} value={c.id_cidade} />
+                ))}
+              </Picker>
+            </View>
+          )}
+
+          <Text style={styles.label}>Senha *</Text>
+          <TextInput style={styles.input} value={senha} onChangeText={setSenha} placeholder="Crie sua senha" secureTextEntry />
+          <View style={styles.passwordRules}>
+            <Text style={styles.rule}>• Mínimo 8 caracteres</Text>
+            <Text style={styles.rule}>• Pelo menos uma letra maiúscula</Text>
+            <Text style={styles.rule}>• Pelo menos uma letra minúscula</Text>
+            <Text style={styles.rule}>• Pelo menos um número</Text>
+          </View>
+
+          <Text style={styles.label}>Confirmar Senha *</Text>
+          <TextInput style={styles.input} value={confirmarSenha} onChangeText={setConfirmarSenha} placeholder="Confirme sua senha" secureTextEntry />
+
+          <TouchableOpacity style={styles.button} onPress={handleRegister}>
+            <Text style={styles.buttonText}>Cadastrar</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={onGoToLogin}>
+            <Text style={styles.link}>Já tem uma conta? Faça login</Text>
+          </TouchableOpacity>
         </View>
-      )}
-
-      <Text style={styles.label}>Senha *</Text>
-      <TextInput style={styles.input} value={senha} onChangeText={setSenha} placeholder="Crie sua senha" secureTextEntry />
-      <View style={styles.passwordRules}>
-        <Text style={styles.rule}>• Mínimo 8 caracteres</Text>
-        <Text style={styles.rule}>• Pelo menos uma letra maiúscula</Text>
-        <Text style={styles.rule}>• Pelo menos uma letra minúscula</Text>
-        <Text style={styles.rule}>• Pelo menos um número</Text>
-      </View>
-
-      <Text style={styles.label}>Confirmar Senha *</Text>
-      <TextInput style={styles.input} value={confirmarSenha} onChangeText={setConfirmarSenha} placeholder="Confirme sua senha" secureTextEntry />
-
-      <TouchableOpacity style={styles.button} onPress={handleRegister}>
-        <Text style={styles.buttonText}>Cadastrar</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity onPress={onGoToLogin}>
-        <Text style={styles.link}>Já tem uma conta? Faça login</Text>
-      </TouchableOpacity>
-    </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, backgroundColor: '#fff' },
-  header: { alignItems: 'center', backgroundColor: '#0a4b9e', paddingVertical: 32, marginHorizontal: -24, marginTop: -24, marginBottom: 24 },
+  container: { flex: 1, backgroundColor: '#f2f6fb' },
+  content: { paddingHorizontal: 24, paddingBottom: 24 },
+  header: { alignItems: 'center', backgroundColor: '#0a4b9e', paddingVertical: 32, marginBottom: 24 },
   logo: { width: 72, height: 72, borderRadius: 36, marginBottom: 8 },
   headerTitle: { color: '#fff', fontSize: 20, fontWeight: '700' },
   headerSubtitle: { color: '#e3ecfa', fontSize: 12, marginTop: 4 },
