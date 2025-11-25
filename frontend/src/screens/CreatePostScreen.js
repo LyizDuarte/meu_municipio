@@ -72,6 +72,7 @@ export default function CreatePostScreen({ user, onClose, onPublished }) {
         descricao: descricao.trim(),
         local_latitude: coords?.latitude || null,
         local_longitude: coords?.longitude || null,
+        fotos,
       };
       await createPost(payload);
       Alert.alert('Publicado', 'Seu post foi publicado com sucesso.');

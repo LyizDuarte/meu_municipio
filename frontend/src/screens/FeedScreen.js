@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import PostCard from '../components/PostCard';
 import { fetchCidadeNomeById } from '../api/client';
-import { listPosts, supportPost, sharePost } from '../api/posts';
+import { listPosts, getPost, supportPost, sharePost } from '../api/posts';
 
 const MOCK_POSTS = [
   {
@@ -65,7 +65,23 @@ export default function FeedScreen({ user, onCreate }) {
         const items = Array.isArray(res)
           ? res
           : (Array.isArray(res?.posts) ? res.posts : []);
-        if (mounted) setPosts(items.length > 0 ? items : MOCK_POSTS);
+        let baseItems = items.length > 0 ? items : MOCK_POSTS;
+        // Se houver posts reais do backend, buscar detalhes para anexar mídias
+        if (Array.isArray(items) && items.length > 0) {
+          const detailed = await Promise.all(items.map(async (p) => {
+            const id = p.id || p.id_post;
+            if (!id) return p;
+            try {
+              const d = await getPost(id);
+              const full = d?.post || d;
+              return full ? { ...p, ...full } : p;
+            } catch (_) {
+              return p;
+            }
+          }));
+          baseItems = detailed;
+        }
+        if (mounted) setPosts(baseItems);
       } catch (e) {
         if (mounted) setPosts(MOCK_POSTS);
       } finally {
@@ -103,7 +119,7 @@ export default function FeedScreen({ user, onCreate }) {
       <FlatList
         contentContainerStyle={{ padding: 16 }}
         data={posts}
-        keyExtractor={(item) => String(item.id)}
+        keyExtractor={(item) => String(item.id || item.id_post)}
         refreshing={loading}
         onRefresh={() => {
           // força recarga
@@ -114,7 +130,22 @@ export default function FeedScreen({ user, onCreate }) {
               const items = Array.isArray(res)
                 ? res
                 : (Array.isArray(res?.posts) ? res.posts : []);
-              setPosts(items.length > 0 ? items : MOCK_POSTS);
+              let baseItems = items.length > 0 ? items : MOCK_POSTS;
+              if (Array.isArray(items) && items.length > 0) {
+                const detailed = await Promise.all(items.map(async (p) => {
+                  const id = p.id || p.id_post;
+                  if (!id) return p;
+                  try {
+                    const d = await getPost(id);
+                    const full = d?.post || d;
+                    return full ? { ...p, ...full } : p;
+                  } catch (_) {
+                    return p;
+                  }
+                }));
+                baseItems = detailed;
+              }
+              setPosts(baseItems);
             } catch (e) {
               setPosts(MOCK_POSTS);
             }

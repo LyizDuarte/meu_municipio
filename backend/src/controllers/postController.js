@@ -20,6 +20,27 @@ async function createPost(req, res) {
     
     // Arquivos de mídia (se houver)
     const midias = req.files || [];
+
+    // Debug temporário: logar campos e arquivos recebidos
+    try {
+      console.log('[POST /posts] body:', {
+        id_usuario,
+        id_categoria,
+        id_cidade,
+        tipo_post,
+        titulo,
+        hasDescricao: !!descricao,
+        local_latitude,
+        local_longitude,
+      });
+      console.log('[POST /posts] files:', Array.isArray(midias) ? midias.map(f => ({
+        fieldname: f.fieldname,
+        originalname: f.originalname,
+        mimetype: f.mimetype,
+        size: f.size,
+        filename: f.filename,
+      })) : midias);
+    } catch (_) {}
     
     const post = await createPostWithMidias({
       id_usuario,

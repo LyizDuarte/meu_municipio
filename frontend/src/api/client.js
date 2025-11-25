@@ -6,13 +6,25 @@ import { Platform } from 'react-native';
 // Se extra.apiBaseUrl estiver setado com localhost, mapeia para 10.0.2.2 no Android.
 function resolveBaseURL() {
   const extraBase = Constants?.expoConfig?.extra?.apiBaseUrl;
+
+  // Tenta detectar o host do dev server (LAN) para dispositivos físicos
+  const hostUri = Constants?.expoConfig?.hostUri; // ex: "172.17.21.208:8083"
+  const hostIp = hostUri ? hostUri.split(':')[0] : null;
+
   if (Platform.OS === 'android') {
-    if (!extraBase) return 'http://10.0.2.2:3000/api';
+    // Se não houver base explícita, tenta LAN; senão, usa 10.0.2.2 para Emulador
+    if (!extraBase) {
+      if (hostIp) return `http://${hostIp}:3000/api`;
+      return 'http://10.0.2.2:3000/api';
+    }
+    // Ajusta localhost para 10.0.2.2 quando em Emulador
     return extraBase
       .replace('localhost', '10.0.2.2')
       .replace('127.0.0.1', '10.0.2.2');
   }
-  return extraBase || 'http://localhost:3000/api';
+
+  // Web/iOS: usa o extra ou localhost
+  return extraBase || (hostIp ? `http://${hostIp}:3000/api` : 'http://localhost:3000/api');
 }
 
 const baseURL = resolveBaseURL();

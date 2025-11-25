@@ -14,7 +14,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Servir arquivos estáticos da pasta uploads
-app.use('/uploads', express.static('src/uploads'));
+// Multer salva em "backend/uploads"; como __dirname = backend/src, o caminho correto é ../uploads
+const path = require('path');
+const uploadsDir = path.join(__dirname, '../uploads');
+app.use('/uploads', express.static(uploadsDir));
 
 // Rota principal
 const routes = require('./routes');
