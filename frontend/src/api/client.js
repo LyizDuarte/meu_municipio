@@ -41,6 +41,11 @@ export async function fetchCidadesByEstado(id_estado) {
   return data.cidades || [];
 }
 
+export async function fetchCategorias() {
+  const { data } = await api.get('/categories');
+  return data.categorias || [];
+}
+
 // Ajuda a obter o nome da cidade dado seu id, iterando pelos estados.
 export async function fetchCidadeNomeById(id_cidade) {
   if (!id_cidade) return null;

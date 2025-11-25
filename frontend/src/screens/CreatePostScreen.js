@@ -6,34 +6,36 @@ import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { createPost } from '../api/posts';
+import { fetchCategorias } from '../api/client';
 
-// Mapeamento simples de categorias para IDs
-const CATEGORY_ID_MAP = {
-  'Iluminação Pública': 1,
-  'Infraestrutura': 2,
-  'Saúde': 3,
-  'Educação': 4,
-  'Segurança': 5,
-  'Transporte': 6,
-};
-
-const CATEGORIES = [
-  'Iluminação Pública',
-  'Infraestrutura',
-  'Saúde',
-  'Educação',
-  'Segurança',
-  'Transporte',
-];
+// Categorias serão carregadas do backend
 
 export default function CreatePostScreen({ user, onClose, onPublished }) {
   const [tipo, setTipo] = React.useState('Sugestão');
-  const [categoria, setCategoria] = React.useState('');
+  const [categoriaId, setCategoriaId] = React.useState(null);
+  const [categorias, setCategorias] = React.useState([]);
+  const [loadingCategorias, setLoadingCategorias] = React.useState(true);
   const [titulo, setTitulo] = React.useState('');
   const [descricao, setDescricao] = React.useState('');
   const [fotos, setFotos] = React.useState([]); // array de { uri }
   const [coords, setCoords] = React.useState(null); // { latitude, longitude }
   const [submitting, setSubmitting] = React.useState(false);
+
+  React.useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setLoadingCategorias(true);
+        const cats = await fetchCategorias();
+        if (mounted) setCategorias(cats);
+      } catch (e) {
+        // Se falhar, mantém lista vazia
+      } finally {
+        if (mounted) setLoadingCategorias(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
 
   async function handleUseLocation() {
     try {
@@ -56,14 +58,14 @@ export default function CreatePostScreen({ user, onClose, onPublished }) {
     } catch (e) {}
   }
 
-  const canPublish = titulo.trim().length > 0 && descricao.trim().length > 0 && categoria;
+  const canPublish = titulo.trim().length > 0 && descricao.trim().length > 0 && !!categoriaId;
 
   async function handlePublish() {
     if (!canPublish || submitting) return;
     setSubmitting(true);
     try {
       const tipo_post = tipo === 'Sugestão' ? 'sugestao' : 'reclamacao';
-      const id_categoria = CATEGORY_ID_MAP[categoria] || 1;
+      const id_categoria = categoriaId;
       const payload = {
         id_categoria,
         id_cidade: user?.id_cidade || null,
@@ -119,10 +121,18 @@ export default function CreatePostScreen({ user, onClose, onPublished }) {
 
         <Text style={styles.sectionLabel}>Categoria</Text>
         <View style={styles.pickerWrapper}>
-          <Picker selectedValue={categoria} onValueChange={(v) => setCategoria(v)}>
-            <Picker.Item label="Selecione uma categoria" value="" />
-            {CATEGORIES.map((c) => (<Picker.Item key={c} label={c} value={c} />))}
-          </Picker>
+          {loadingCategorias ? (
+            <View style={{ paddingVertical: 12, alignItems: 'center' }}>
+              <ActivityIndicator size="small" color="#0a4b9e" />
+            </View>
+          ) : (
+            <Picker selectedValue={categoriaId} onValueChange={(v) => setCategoriaId(v)}>
+              <Picker.Item label="Selecione uma categoria" value={null} />
+              {categorias.map((c) => (
+                <Picker.Item key={c.id_categoria} label={c.nome_categoria} value={c.id_categoria} />
+              ))}
+            </Picker>
+          )}
         </View>
 
         <Text style={styles.sectionLabel}>Título *</Text>
