@@ -112,3 +112,8 @@ export async function addComment(id, conteudo) {
   const { data } = await api.post(`/posts/${id}/comments`, { conteudo });
   return data; // { ...novoComentario }
 }
+
+export async function getComments(id, { page = 1, limit = 10 } = {}) {
+  const { data } = await api.get(`/posts/${id}/comments`, { params: { page, limit } });
+  return data; // { comentarios, pagination }
+}

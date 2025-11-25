@@ -4,7 +4,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import PostCard from '../components/PostCard';
 import { fetchCidadeNomeById } from '../api/client';
-import { listPosts, getPost, supportPost, sharePost } from '../api/posts';
+import { listPosts, getPost, supportPost, removeSupport, sharePost } from '../api/posts';
+import { Share, TextInput } from 'react-native';
+import CommentsSheet from '../components/CommentsSheet';
 
 const MOCK_POSTS = [
   {
@@ -43,6 +45,8 @@ export default function FeedScreen({ user, onCreate }) {
   const [cityName, setCityName] = React.useState('Sua Cidade');
   const [posts, setPosts] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
+  const [commentTarget, setCommentTarget] = React.useState(null);
+  const [supportingIds, setSupportingIds] = React.useState(new Set());
 
   React.useEffect(() => {
     let mounted = true;
@@ -74,7 +78,18 @@ export default function FeedScreen({ user, onCreate }) {
             try {
               const d = await getPost(id);
               const full = d?.post || d;
-              return full ? { ...p, ...full } : p;
+              const metrics = d?.metrics || {};
+              const apoiosCount = metrics?.apoios?.curtir || 0; // contamos 'curtir'
+              const comentariosCount = metrics?.comentarios || 0;
+              const compartilhamentosCount = metrics?.compartilhamentos || 0;
+              return full ? { 
+                ...p, 
+                ...full, 
+                apoios: apoiosCount,
+                comentarios: comentariosCount,
+                compartilhamentos: compartilhamentosCount,
+                metrics: metrics,
+              } : p;
             } catch (_) {
               return p;
             }
@@ -93,22 +108,50 @@ export default function FeedScreen({ user, onCreate }) {
   }, [user]);
 
   const handleSupport = async (item) => {
+    const id = item.id || item.id_post;
+    if (!id) return;
+    // Evita cliques duplicados enquanto processa
+    if (supportingIds.has(id)) return;
+    // Evita apoiar novamente se já apoiado
+    if (item.apoio_atual === 'curtir') return;
     try {
-      await supportPost(item.id);
-      setPosts((prev) => prev.map((p) => p.id === item.id ? { ...p, apoios: (p.apoios || 0) + 1 } : p));
+      setSupportingIds((prev) => new Set(prev).add(id));
+      const res = await supportPost(id, 'curtir');
+      setPosts((prev) => prev.map((p) => (p.id === id || p.id_post === id) ? { 
+        ...p, 
+        apoio_atual: res?.apoio_atual || 'curtir', 
+        apoios: res?.contagem?.curtir ?? ((p.apoios||0) + 1) 
+      } : p));
     } catch (_) {}
+    finally {
+      setSupportingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
   };
 
   const handleShare = async (item) => {
+    const id = item.id || item.id_post;
+    if (!id) return;
     try {
-      await sharePost(item.id);
-      setPosts((prev) => prev.map((p) => p.id === item.id ? { ...p, compartilhamentos: (p.compartilhamentos || 0) + 1 } : p));
+      const res = await sharePost(id);
+      const url = res?.share_url;
+      if (url) {
+        try { await Share.share({ message: url }); } catch (_) {}
+      }
+      setPosts((prev) => prev.map((p) => (p.id === id || p.id_post === id) ? { 
+        ...p, compartilhamentos: res?.total_compartilhamentos ?? ((p.compartilhamentos || 0) + 1) 
+      } : p));
     } catch (_) {}
   };
 
   const handleComment = (item) => {
-    // Integração futura: abrir composer de comentários
+    setCommentTarget(item);
   };
+
+  
   return (
     <SafeAreaView style={styles.container} edges={['top','bottom']}>
       <View style={styles.topBar}>
@@ -138,7 +181,18 @@ export default function FeedScreen({ user, onCreate }) {
                   try {
                     const d = await getPost(id);
                     const full = d?.post || d;
-                    return full ? { ...p, ...full } : p;
+                    const metrics = d?.metrics || {};
+                    const apoiosCount = metrics?.apoios?.curtir || 0;
+                    const comentariosCount = metrics?.comentarios || 0;
+                    const compartilhamentosCount = metrics?.compartilhamentos || 0;
+                    return full ? { 
+                      ...p, 
+                      ...full, 
+                      apoios: apoiosCount,
+                      comentarios: comentariosCount,
+                      compartilhamentos: compartilhamentosCount,
+                      metrics: metrics, // manter também para consumo no PostCard
+                    } : p;
                   } catch (_) {
                     return p;
                   }
@@ -154,12 +208,26 @@ export default function FeedScreen({ user, onCreate }) {
         renderItem={({ item }) => (
           <PostCard
             post={item}
+            supporting={supportingIds.has(item.id || item.id_post)}
             onSupport={() => handleSupport(item)}
             onComment={() => handleComment(item)}
             onShare={() => handleShare(item)}
           />
         )}
       />
+      {commentTarget && (
+        <CommentsSheet
+          post={commentTarget}
+          onClose={() => setCommentTarget(null)}
+          onSubmitted={() => {
+            const id = commentTarget.id || commentTarget.id_post;
+            setPosts((prev) => prev.map((p) => (p.id === id || p.id_post === id) ? { 
+              ...p, comentarios: (p.comentarios || 0) + 1 
+            } : p));
+            setCommentTarget(null);
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -169,4 +237,5 @@ const styles = StyleSheet.create({
   topBar: { height: 56, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e6eaf0', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12 },
   topTitle: { fontSize: 16, fontWeight: '700', color: '#0a4b9e' },
   iconBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 18, borderWidth: 1, borderColor: '#e6eaf0', backgroundColor: '#fff' },
+  // Comentários agora são geridos pelo CommentsSheet
 });

@@ -3,7 +3,7 @@ import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView } from 'rea
 import { MaterialIcons } from '@expo/vector-icons';
 import { api } from '../api/client';
 
-export default function PostCard({ post, onSupport, onComment, onShare }) {
+export default function PostCard({ post, onSupport, onComment, onShare, supporting = false }) {
   const handleSupport = onSupport || (() => {});
   const handleComment = onComment || (() => {});
   const handleShare = onShare || (() => {});
@@ -17,6 +17,10 @@ export default function PostCard({ post, onSupport, onComment, onShare }) {
     .map((m) => m.url || m.midia_url)
     .filter(Boolean)
     .map((u) => (u.startsWith('http') ? u : `${mediaBase}${u}`));
+  const comentariosCount = typeof post.comentarios === 'number' ? post.comentarios : (post.metrics?.comentarios || 0);
+  const compartilhamentosCount = typeof post.compartilhamentos === 'number' ? post.compartilhamentos : (post.metrics?.compartilhamentos || 0);
+  const apoiosCount = typeof post.apoios === 'number' ? post.apoios : (post.metrics?.apoios?.curtir || 0);
+  const supported = post.apoio_atual === 'curtir';
   return (
     <View style={styles.card}>
       <View style={styles.headerRow}>
@@ -52,13 +56,16 @@ export default function PostCard({ post, onSupport, onComment, onShare }) {
       ) : null)}
 
       <View style={styles.footerStats}>
-        <Text style={styles.stat}>{post.apoios} apoios</Text>
-        <Text style={styles.stat}>{post.comentarios} comentários</Text>
-        <Text style={styles.stat}>{post.compartilhamentos} compartilhamentos</Text>
+        <Text style={styles.stat}>{apoiosCount} apoios</Text>
+        <Text style={styles.stat}>{comentariosCount} comentários</Text>
+        <Text style={styles.stat}>{compartilhamentosCount} compartilhamentos</Text>
       </View>
 
       <View style={styles.footerActions}>
-        <TouchableOpacity style={styles.actionBtn} onPress={handleSupport}><MaterialIcons name="thumb-up" size={18} color="#0a4b9e" /><Text style={styles.actionText}>Apoiar</Text></TouchableOpacity>
+        <TouchableOpacity style={[styles.actionBtn, (supporting || supported) ? styles.actionBtnDisabled : null]} onPress={handleSupport} disabled={supporting || supported}>
+          <MaterialIcons name="thumb-up" size={18} color={(supporting || supported) ? '#94a3b8' : '#0a4b9e'} />
+          <Text style={[styles.actionText, (supporting || supported) ? styles.actionTextDisabled : null]}>{supported ? 'Apoiado' : (supporting ? 'Apoiando...' : 'Apoiar')}</Text>
+        </TouchableOpacity>
         <TouchableOpacity style={styles.actionBtn} onPress={handleComment}><MaterialIcons name="chat-bubble" size={18} color="#0a4b9e" /><Text style={styles.actionText}>Comentar</Text></TouchableOpacity>
         <TouchableOpacity style={styles.actionBtn} onPress={handleShare}><MaterialIcons name="share" size={18} color="#0a4b9e" /><Text style={styles.actionText}>Compartilhar</Text></TouchableOpacity>
       </View>
@@ -86,5 +93,7 @@ const styles = StyleSheet.create({
   stat: { color: '#6b7280' },
   footerActions: { flexDirection: 'row', justifyContent: 'space-around', marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#eef2f7' },
   actionBtn: { flexDirection: 'row', alignItems: 'center' },
+  actionBtnDisabled: { opacity: 0.6 },
   actionText: { marginLeft: 6, color: '#0a4b9e', fontWeight: '600' },
+  actionTextDisabled: { color: '#94a3b8' },
 });
