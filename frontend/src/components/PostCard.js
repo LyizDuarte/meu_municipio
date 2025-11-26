@@ -28,6 +28,7 @@ export default function PostCard({
       : post.tipo_post === "reclamacao"
       ? "Reclamação"
       : "");
+  const isSugestao = tipoLabel === "Sugestão";
   const categoriaLabel = post.categoria || post.nome_categoria || "";
   const localText = post.local || post.nome_cidade || "";
   const mediaBase = api?.defaults?.baseURL
@@ -59,7 +60,12 @@ export default function PostCard({
       : post.metrics?.apoios?.curtir || 0;
   const supported = post.apoio_atual === "curtir";
   return (
-    <View style={styles.card}>
+    <View
+      style={[
+        styles.card,
+        isSugestao ? styles.cardSugestao : styles.cardReclamacao,
+      ]}
+    >
       <View style={styles.headerRow}>
         {avatarUrl ? (
           <Image source={{ uri: avatarUrl }} style={styles.avatar} />
@@ -74,8 +80,20 @@ export default function PostCard({
           </Text>
           <Text style={styles.time}>{post.tempo || ""}</Text>
         </View>
-        <View style={styles.tag}>
-          <Text style={styles.tagText}>{tipoLabel}</Text>
+        <View
+          style={[
+            styles.tag,
+            isSugestao ? styles.tagSugestao : styles.tagReclamacao,
+          ]}
+        >
+          <Text
+            style={[
+              styles.tagText,
+              isSugestao ? styles.tagTextSugestao : styles.tagTextReclamacao,
+            ]}
+          >
+            {tipoLabel}
+          </Text>
         </View>
       </View>
       {sharedByMe && (
@@ -169,6 +187,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#e6eaf0",
   },
+  cardSugestao: { borderColor: "#d1fae5" },
+  cardReclamacao: { borderColor: "#fecaca" },
   headerRow: { flexDirection: "row", alignItems: "center" },
   avatar: { width: 36, height: 36, borderRadius: 18, marginRight: 8 },
   author: { fontWeight: "600", fontSize: 14 },
@@ -179,7 +199,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
+  tagSugestao: { backgroundColor: "#e7f5ef" },
+  tagReclamacao: { backgroundColor: "#fee2e2" },
   tagText: { color: "#0a4b9e", fontSize: 12, fontWeight: "600" },
+  tagTextSugestao: { color: "#1f7a47" },
+  tagTextReclamacao: { color: "#b91c1c" },
   sharedBanner: {
     flexDirection: "row",
     alignItems: "center",
