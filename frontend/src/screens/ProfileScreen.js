@@ -17,6 +17,8 @@ import {
   listLikedPostsByUser,
   listCommentsByUser,
   getPost,
+  sharePost,
+  unsharePost,
 } from "../api/posts";
 import { updateMe, uploadAvatar } from "../api/auth";
 import { api } from "../api/client";
@@ -83,6 +85,7 @@ export default function ProfileScreen({
                       compartilhamentos: compartilhamentosCount,
                       metrics,
                       apoio_atual: d?.apoio_atual ?? p.apoio_atual ?? null,
+                      shared_by_me: d?.shared_by_me === true,
                     }
                   : p;
               } catch (_) {
@@ -366,7 +369,39 @@ export default function ProfileScreen({
               post={item}
               onComment={() => setCommentTarget(item)}
               onSupport={() => {}}
-              onShare={() => {}}
+              onShare={async () => {
+                const id = item.id || item.id_post;
+                if (!id) return;
+                try {
+                  if (
+                    item?.origem === "compartilhado" ||
+                    item.shared_by_me === true
+                  ) {
+                    const res = await unsharePost(id);
+                    setPosts((prev) =>
+                      prev.filter((p) => (p.id || p.id_post) !== id)
+                    );
+                  } else {
+                    const res = await sharePost(id);
+                    setPosts((prev) =>
+                      prev.map((p) =>
+                        p.id === id || p.id_post === id
+                          ? {
+                              ...p,
+                              shared_by_me: true,
+                              compartilhamentos:
+                                res?.total_compartilhamentos ??
+                                (p.compartilhamentos || 0) + 1,
+                            }
+                          : p
+                      )
+                    );
+                  }
+                } catch (_) {}
+              }}
+              sharedByMe={
+                item?.origem === "compartilhado" || item?.shared_by_me === true
+              }
             />
           )
         }

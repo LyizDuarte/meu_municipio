@@ -6,6 +6,7 @@ const {
   findAllPosts,
   updatePost,
   deletePost,
+  findPostsPublicadosOuCompartilhadosByUsuario,
 } = require("../models/postModel");
 const { getMediaUrl } = require("../middlewares/upload");
 const {
@@ -26,6 +27,8 @@ const {
 const {
   addCompartilhamento,
   countCompartilhamentos,
+  removeCompartilhamento,
+  findCompartilhamentoByUserPost,
 } = require("../models/compartilhamentoModel");
 
 async function createPostWithMidias({
@@ -147,13 +150,19 @@ async function getPostWithDetails(id_post, id_usuario = null) {
   if (id_usuario) {
     const current = await findApoioByUserPost(id_usuario, id_post);
     response.apoio_atual = current?.tipo_apoio || null;
+    const comp = await findCompartilhamentoByUserPost(id_usuario, id_post);
+    response.shared_by_me = !!comp;
   }
   return response;
 }
 
 async function getUserPosts(id_usuario, page = 1, limit = 10) {
   const offset = (page - 1) * limit;
-  const posts = await findPostsByUsuario(id_usuario, limit, offset);
+  const posts = await findPostsPublicadosOuCompartilhadosByUsuario(
+    id_usuario,
+    limit,
+    offset
+  );
   return posts;
 }
 
@@ -427,5 +436,16 @@ module.exports = {
       ? `${frontendBaseUrl}/posts/${id_post}`
       : apiUrl;
     return { total_compartilhamentos: total, share_url: webUrl };
+  },
+  async unsharePostByUser(id_post, id_usuario) {
+    const post = await findPostById(id_post);
+    if (!post) {
+      const err = new Error("Post não encontrado");
+      err.status = 404;
+      throw err;
+    }
+    await removeCompartilhamento(id_usuario, id_post);
+    const total = await countCompartilhamentos(id_post);
+    return { total_compartilhamentos: total };
   },
 };

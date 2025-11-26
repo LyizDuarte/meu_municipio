@@ -111,7 +111,12 @@ export async function removeSupport(id) {
 
 export async function sharePost(id) {
   const { data } = await api.post(`/posts/${id}/share`);
-  return data; // { message, total_compartilhamentos, share_url }
+  return data; // { total_compartilhamentos, share_url }
+}
+
+export async function unsharePost(id) {
+  const { data } = await api.delete(`/posts/${id}/share`);
+  return data; // { total_compartilhamentos }
 }
 
 export async function addComment(id, conteudo) {

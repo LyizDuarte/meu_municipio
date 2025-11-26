@@ -13,6 +13,7 @@ const {
   supportPostByUser,
   unsupportPostByUser,
   sharePostByUser,
+  unsharePostByUser,
 } = require('../services/postService');
 
 async function createPost(req, res) {
@@ -301,6 +302,18 @@ async function sharePost(req, res) {
   }
 }
 
+async function unsharePost(req, res) {
+  try {
+    const { id } = req.params; // id_post
+    const id_usuario = req.user.id_usuario;
+    const result = await unsharePostByUser(parseInt(id), id_usuario);
+    return res.status(200).json({ message: 'Compartilhamento removido', ...result });
+  } catch (err) {
+    const status = err.status || 500;
+    return res.status(status).json({ message: err.message || 'Erro interno' });
+  }
+}
+
 module.exports = {
   createPost,
   getPost,
@@ -317,4 +330,5 @@ module.exports = {
   supportPost,
   unsupportPost,
   sharePost,
+  unsharePost,
 };

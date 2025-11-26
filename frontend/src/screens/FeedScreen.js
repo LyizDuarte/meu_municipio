@@ -16,6 +16,7 @@ import {
   supportPost,
   removeSupport,
   sharePost,
+  unsharePost,
 } from "../api/posts";
 import { TextInput } from "react-native";
 import { Picker } from "@react-native-picker/picker";
@@ -152,6 +153,7 @@ export default function FeedScreen({ user, onCreate, onProfile, focusPostId }) {
                       compartilhamentos: compartilhamentosCount,
                       metrics: metrics,
                       apoio_atual: d?.apoio_atual ?? p.apoio_atual ?? null,
+                      shared_by_me: d?.shared_by_me === true,
                     }
                   : p;
               } catch (_) {
@@ -222,27 +224,51 @@ export default function FeedScreen({ user, onCreate, onProfile, focusPostId }) {
   const handleShare = async (item) => {
     const id = item.id || item.id_post;
     if (!id) return;
+    const isShared = sharedIds.has(id) || item.shared_by_me === true;
     try {
-      const res = await sharePost(id);
-      const url = res?.share_url;
-      if (url) {
-        try {
-          await Share.share({ message: url });
-        } catch (_) {}
+      if (isShared) {
+        const res = await unsharePost(id);
+        setPosts((prev) =>
+          prev.map((p) =>
+            p.id === id || p.id_post === id
+              ? {
+                  ...p,
+                  shared_by_me: false,
+                  compartilhamentos:
+                    res?.total_compartilhamentos ??
+                    Math.max((p.compartilhamentos || 0) - 1, 0),
+                }
+              : p
+          )
+        );
+        setSharedIds((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+      } else {
+        const res = await sharePost(id);
+        const url = res?.share_url;
+        if (url) {
+          try {
+            await Share.share({ message: url });
+          } catch (_) {}
+        }
+        setPosts((prev) =>
+          prev.map((p) =>
+            p.id === id || p.id_post === id
+              ? {
+                  ...p,
+                  shared_by_me: true,
+                  compartilhamentos:
+                    res?.total_compartilhamentos ??
+                    (p.compartilhamentos || 0) + 1,
+                }
+              : p
+          )
+        );
+        setSharedIds((prev) => new Set(prev).add(id));
       }
-      setPosts((prev) =>
-        prev.map((p) =>
-          p.id === id || p.id_post === id
-            ? {
-                ...p,
-                compartilhamentos:
-                  res?.total_compartilhamentos ??
-                  (p.compartilhamentos || 0) + 1,
-              }
-            : p
-        )
-      );
-      setSharedIds((prev) => new Set(prev).add(id));
     } catch (_) {}
   };
 
@@ -394,6 +420,7 @@ export default function FeedScreen({ user, onCreate, onProfile, focusPostId }) {
                             metrics: metrics, // manter também para consumo no PostCard
                             apoio_atual:
                               d?.apoio_atual ?? p.apoio_atual ?? null,
+                            shared_by_me: d?.shared_by_me === true,
                           }
                         : p;
                     } catch (_) {

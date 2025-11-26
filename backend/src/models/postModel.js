@@ -85,6 +85,39 @@ async function findPostsByUsuario(id_usuario, limit = 10, offset = 0) {
   return rows;
 }
 
+async function findPostsPublicadosOuCompartilhadosByUsuario(
+  id_usuario,
+  limit = 10,
+  offset = 0
+) {
+  const [rows] = await pool.execute(
+    `
+    (
+      SELECT p.*, u.nome as autor_nome, u.media_url as autor_media_url, c.nome_categoria, ci.nome_cidade, 'publicado' AS origem 
+      FROM Posts p
+      JOIN Usuarios u ON p.id_usuario = u.id_usuario
+      JOIN Categorias c ON p.id_categoria = c.id_categoria
+      JOIN Cidades ci ON p.id_cidade = ci.id_cidade
+      WHERE p.id_usuario = ?
+    )
+    UNION
+    (
+      SELECT p.*, u.nome as autor_nome, u.media_url as autor_media_url, c.nome_categoria, ci.nome_cidade, 'compartilhado' AS origem 
+      FROM Compartilhamentos cp
+      JOIN Posts p ON cp.id_post = p.id_post
+      JOIN Usuarios u ON p.id_usuario = u.id_usuario
+      JOIN Categorias c ON p.id_categoria = c.id_categoria
+      JOIN Cidades ci ON p.id_cidade = ci.id_cidade
+      WHERE cp.id_usuario = ?
+    )
+    ORDER BY data_criacao DESC
+    LIMIT ? OFFSET ?
+  `,
+    [id_usuario, id_usuario, limit, offset]
+  );
+  return rows;
+}
+
 async function findAllPosts(limit = 20, offset = 0, filters = {}) {
   let query = `
     SELECT p.*, u.nome as autor_nome, u.media_url as autor_media_url, c.nome_categoria, ci.nome_cidade 
@@ -178,6 +211,7 @@ module.exports = {
   addPostMidia,
   findPostById,
   findPostsByUsuario,
+  findPostsPublicadosOuCompartilhadosByUsuario,
   findAllPosts,
   updatePost,
   deletePost,

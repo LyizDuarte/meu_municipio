@@ -64,6 +64,7 @@ export default function PostCard({
       ? post.apoios
       : post.metrics?.apoios?.curtir || 0;
   const supported = post.apoio_atual === "curtir";
+  const isShared = sharedByMe || post.shared_by_me === true;
   return (
     <View
       style={[
@@ -176,7 +177,9 @@ export default function PostCard({
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionBtn} onPress={handleShare}>
           <MaterialIcons name="share" size={18} color="#0a4b9e" />
-          <Text style={styles.actionText}>Compartilhar</Text>
+          <Text style={styles.actionText}>
+            {isShared ? "Descompartilhar" : "Compartilhar"}
+          </Text>
         </TouchableOpacity>
       </View>
     </View>

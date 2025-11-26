@@ -16,6 +16,7 @@ const {
   supportPost,
   unsupportPost,
   sharePost,
+  unsharePost,
 } = require('../controllers/postController');
 const authMiddleware = require('../middlewares/auth');
 const { uploadMiddleware } = require('../middlewares/upload');
@@ -39,6 +40,7 @@ router.delete('/:id/support', authMiddleware, unsupportPost); // remover apoio
 
 // Compartilhamento
 router.post('/:id/share', authMiddleware, sharePost);
+router.delete('/:id/share', authMiddleware, unsharePost);
 
 // Rotas protegidas relacionadas a posts
 router.post('/', authMiddleware, uploadMiddleware, createPost);
