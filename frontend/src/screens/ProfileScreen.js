@@ -23,7 +23,13 @@ import { api } from "../api/client";
 import * as ImagePicker from "expo-image-picker";
 import { fetchCidadeNomeById } from "../api/client";
 
-export default function ProfileScreen({ user, onBack, onUpdated, onOpenPost }) {
+export default function ProfileScreen({
+  user,
+  onBack,
+  onUpdated,
+  onOpenPost,
+  onLogout,
+}) {
   const [editing, setEditing] = React.useState(false);
   const [nome, setNome] = React.useState(user?.nome || "");
   const [descricao, setDescricao] = React.useState(user?.descricao || "");
@@ -167,6 +173,14 @@ export default function ProfileScreen({ user, onBack, onUpdated, onOpenPost }) {
           onPress={() => setEditing((v) => !v)}
         >
           <MaterialIcons name="edit" size={22} color="#0a4b9e" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.iconBtn, { marginLeft: 8 }]}
+          onPress={() => {
+            if (typeof onLogout === "function") onLogout();
+          }}
+        >
+          <MaterialIcons name="logout" size={22} color="#0a4b9e" />
         </TouchableOpacity>
       </View>
 

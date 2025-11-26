@@ -7,7 +7,7 @@ import RegisterScreen from "./src/screens/RegisterScreen";
 import FeedScreen from "./src/screens/FeedScreen";
 import ProfileScreen from "./src/screens/ProfileScreen";
 import CreatePostScreen from "./src/screens/CreatePostScreen";
-import { getToken } from "./src/storage/token";
+import { getToken, clearToken } from "./src/storage/token";
 import { setAuthToken } from "./src/api/client";
 import { me } from "./src/api/auth";
 
@@ -87,6 +87,14 @@ export default function App() {
             onOpenPost={(id) => {
               setFocusPostId(id);
               setScreen("feed");
+            }}
+            onLogout={async () => {
+              try {
+                await clearToken();
+              } catch (_) {}
+              setAuthToken(null);
+              setUser(null);
+              setScreen("login");
             }}
           />
         )}
