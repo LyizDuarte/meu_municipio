@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { findUsuarioByEmail, createUsuario, findUsuarioById } = require('../models/usuarioModel');
+const { findUsuarioByEmail, createUsuario, findUsuarioById, updateUsuario } = require('../models/usuarioModel');
 
 function generateToken(user) {
   const secret = process.env.JWT_SECRET || 'jwt_dev_secret_change_me';
@@ -77,9 +77,29 @@ async function getMe(id_usuario) {
   return user;
 }
 
+async function updateMe(id_usuario, payload) {
+  const { nome, descricao, id_cidade, media_url } = payload;
+  if ([nome, descricao, id_cidade, media_url].every((v) => v === undefined)) {
+    const err = new Error('Nenhuma alteração enviada');
+    err.status = 400;
+    throw err;
+  }
+
+  const ok = await updateUsuario(id_usuario, { nome, descricao, id_cidade, media_url });
+  if (!ok) {
+    const err = new Error('Usuário não encontrado');
+    err.status = 404;
+    throw err;
+  }
+  const user = await findUsuarioById(id_usuario);
+  if (user && user.senha) delete user.senha;
+  return user;
+}
+
 module.exports = {
   registerUser,
   loginUser,
   getMe,
   generateToken,
+  updateMe,
 };

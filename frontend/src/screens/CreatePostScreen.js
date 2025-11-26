@@ -6,7 +6,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { createPost } from '../api/posts';
-import { fetchCategorias } from '../api/client';
+import { fetchCategorias, api } from '../api/client';
 
 // Categorias serão carregadas do backend
 
@@ -102,7 +102,18 @@ export default function CreatePostScreen({ user, onClose, onPublished }) {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.userCard}>
-          <Image source={{ uri: user?.avatar || 'https://randomuser.me/api/portraits/women/75.jpg' }} style={styles.avatar} />
+          {user?.media_url ? (
+            (() => {
+              const base = api?.defaults?.baseURL || '';
+              const apiBase = base.replace(/\/api$/, '');
+              const src = String(user.media_url).startsWith('http') ? user.media_url : `${apiBase}${user.media_url}`;
+              return <Image source={{ uri: src }} style={styles.avatar} />;
+            })()
+          ) : (
+            <View style={[styles.avatar, { alignItems: 'center', justifyContent: 'center' }]}>
+              <MaterialIcons name="person" size={20} color="#7f8ea3" />
+            </View>
+          )}
           <View style={{ flex: 1 }}>
             <Text style={styles.userName}>{user?.nome || 'Você'}</Text>
             <Text style={styles.userCity}>São Paulo, SP</Text>

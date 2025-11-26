@@ -44,3 +44,22 @@ module.exports = {
   findApoioByUserPost,
   countApoios,
 };
+
+// Lista posts curtidos por um usuário
+async function findPostsCurtidosByUsuario(id_usuario, limit = 10, offset = 0) {
+  const [rows] = await pool.execute(
+    `SELECT p.*, u.nome as autor_nome, u.media_url as autor_media_url, c.nome_categoria, ci.nome_cidade
+     FROM Apoios a
+     JOIN Posts p ON a.id_post = p.id_post
+     JOIN Usuarios u ON p.id_usuario = u.id_usuario
+     JOIN Categorias c ON p.id_categoria = c.id_categoria
+     JOIN Cidades ci ON p.id_cidade = ci.id_cidade
+     WHERE a.id_usuario = ? AND a.tipo_apoio = 'curtir'
+     ORDER BY p.data_criacao DESC
+     LIMIT ? OFFSET ?`,
+    [id_usuario, limit, offset]
+  );
+  return rows;
+}
+
+module.exports.findPostsCurtidosByUsuario = findPostsCurtidosByUsuario;

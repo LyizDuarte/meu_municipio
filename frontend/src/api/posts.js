@@ -1,8 +1,8 @@
-import { api } from './client';
-import { Platform } from 'react-native';
+import { api } from "./client";
+import { Platform } from "react-native";
 
 export async function listPosts(params = {}) {
-  const { data } = await api.get('/posts', { params });
+  const { data } = await api.get("/posts", { params });
   return data; // { posts, pagination }
 }
 
@@ -19,13 +19,13 @@ export async function createPost(payload) {
     const form = new FormData();
     // Campos de texto
     const fields = [
-      'id_categoria',
-      'id_cidade',
-      'tipo_post',
-      'titulo',
-      'descricao',
-      'local_latitude',
-      'local_longitude',
+      "id_categoria",
+      "id_cidade",
+      "tipo_post",
+      "titulo",
+      "descricao",
+      "local_latitude",
+      "local_longitude",
     ];
     fields.forEach((key) => {
       const val = payload[key];
@@ -38,49 +38,55 @@ export async function createPost(payload) {
       const f = payload.fotos[idx];
       const uri = f?.uri || f;
       if (!uri) continue;
-      let name = (typeof f?.name === 'string' && f.name) || uri.split('/').pop() || `midia-${idx + 1}.jpg`;
+      let name =
+        (typeof f?.name === "string" && f.name) ||
+        uri.split("/").pop() ||
+        `midia-${idx + 1}.jpg`;
       // Garante extensão no nome para passar no fileFilter do backend
       if (!/\.(jpe?g|png|gif|webp|mp4|mov|avi|webm)$/i.test(name)) {
         name = `${name}.jpg`;
       }
-      let type = f?.type || 'application/octet-stream';
+      let type = f?.type || "application/octet-stream";
       const lower = name.toLowerCase();
-      if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) type = 'image/jpeg';
-      else if (lower.endsWith('.png')) type = 'image/png';
-      else if (lower.endsWith('.gif')) type = 'image/gif';
-      else if (lower.endsWith('.webp')) type = 'image/webp';
+      if (lower.endsWith(".jpg") || lower.endsWith(".jpeg"))
+        type = "image/jpeg";
+      else if (lower.endsWith(".png")) type = "image/png";
+      else if (lower.endsWith(".gif")) type = "image/gif";
+      else if (lower.endsWith(".webp")) type = "image/webp";
 
-      if (Platform.OS === 'web') {
+      if (Platform.OS === "web") {
         // No web, converte URI em Blob/File
         try {
           const res = await fetch(uri);
           const blob = await res.blob();
           const file = new File([blob], name, { type: blob.type || type });
-          form.append('midias', file);
+          form.append("midias", file);
         } catch (_) {
           // Se falhar em obter blob, ignora este arquivo
         }
       } else {
-        form.append('midias', { uri, name, type });
+        form.append("midias", { uri, name, type });
       }
     }
 
     // Não defina manualmente o Content-Type: o navegador/device adiciona o boundary corretamente
     try {
-      const { data } = await api.post('/posts', form);
+      const { data } = await api.post("/posts", form);
       return data; // { post }
     } catch (err) {
       // Fallback para RN: usar fetch, que lida melhor com multipart em alguns ambientes
-      const baseURL = api?.defaults?.baseURL || '';
+      const baseURL = api?.defaults?.baseURL || "";
       const auth = api?.defaults?.headers?.common?.Authorization;
       const resp = await fetch(`${baseURL}/posts`, {
-        method: 'POST',
+        method: "POST",
         headers: auth ? { Authorization: auth } : undefined,
         body: form,
       });
       if (!resp.ok) {
         let body;
-        try { body = await resp.json(); } catch (_) {}
+        try {
+          body = await resp.json();
+        } catch (_) {}
         const msg = body?.message || `Falha no upload (${resp.status})`;
         throw new Error(msg);
       }
@@ -89,11 +95,11 @@ export async function createPost(payload) {
     }
   }
 
-  const { data } = await api.post('/posts', payload);
+  const { data } = await api.post("/posts", payload);
   return data; // { post }
 }
 
-export async function supportPost(id, tipo_apoio = 'curtir') {
+export async function supportPost(id, tipo_apoio = "curtir") {
   const { data } = await api.post(`/posts/${id}/support`, { tipo_apoio });
   return data; // { message, ...result }
 }
@@ -114,6 +120,28 @@ export async function addComment(id, conteudo) {
 }
 
 export async function getComments(id, { page = 1, limit = 10 } = {}) {
-  const { data } = await api.get(`/posts/${id}/comments`, { params: { page, limit } });
+  const { data } = await api.get(`/posts/${id}/comments`, {
+    params: { page, limit },
+  });
   return data; // { comentarios, pagination }
 }
+
+export async function listPostsByUser(id_usuario, params = {}) {
+  const { data } = await api.get(`/posts/user/${id_usuario}`, { params });
+  return data; // { posts, pagination }
+}
+
+export async function listLikedPostsByUser(id_usuario, params = {}) {
+  const { data } = await api.get(`/posts/user/${id_usuario}/likes`, { params });
+  return data; // { posts, pagination }
+}
+
+export async function listCommentsByUser(id_usuario, params = {}) {
+  const { data } = await api.get(`/posts/user/${id_usuario}/comments`, {
+    params,
+  });
+  return data; // { comentarios, pagination }
+}
+
+// Compatibilidade antiga (nome anterior):
+export const listCommentedPostsByUser = listCommentsByUser;

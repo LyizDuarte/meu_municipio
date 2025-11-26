@@ -126,3 +126,4 @@ const styles = StyleSheet.create({
   input: { borderWidth: 1, borderColor: '#e6eaf0', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: '#fff' },
   iconBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 18, borderWidth: 1, borderColor: '#e6eaf0', backgroundColor: '#fff' },
 });
+

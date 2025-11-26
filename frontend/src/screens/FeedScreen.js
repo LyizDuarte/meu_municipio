@@ -1,64 +1,100 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { MaterialIcons } from '@expo/vector-icons';
-import PostCard from '../components/PostCard';
-import { fetchCidadeNomeById } from '../api/client';
-import { listPosts, getPost, supportPost, removeSupport, sharePost } from '../api/posts';
-import { Share, TextInput } from 'react-native';
-import CommentsSheet from '../components/CommentsSheet';
+import React from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { MaterialIcons } from "@expo/vector-icons";
+import PostCard from "../components/PostCard";
+import { fetchCidadeNomeById } from "../api/client";
+import {
+  listPosts,
+  getPost,
+  supportPost,
+  removeSupport,
+  sharePost,
+} from "../api/posts";
+import { Share } from "react-native";
+import CommentsSheet from "../components/CommentsSheet";
 
 const MOCK_POSTS = [
   {
     id: 1,
-    autor: 'Carlos Silva',
-    tempo: 'há 2 horas',
-    tipo: 'Sugestão',
-    categoria: 'Iluminação Pública',
-    titulo: 'Melhorar iluminação na Rua das Flores',
-    descricao: 'A rua está muito escura à noite, causando insegurança para pedestres. Seria importante instalar mais postes de luz... Ver mais',
-    local: 'Rua das Flores, Centro',
-    imagem: 'https://images.unsplash.com/photo-1478033394151-c931b92aef70?q=80&w=1080&auto=format&fit=crop',
+    autor: "Carlos Silva",
+    tempo: "há 2 horas",
+    tipo: "Sugestão",
+    categoria: "Iluminação Pública",
+    titulo: "Melhorar iluminação na Rua das Flores",
+    descricao:
+      "A rua está muito escura à noite, causando insegurança para pedestres. Seria importante instalar mais postes de luz... Ver mais",
+    local: "Rua das Flores, Centro",
+    imagem:
+      "https://images.unsplash.com/photo-1478033394151-c931b92aef70?q=80&w=1080&auto=format&fit=crop",
     apoios: 24,
     comentarios: 8,
     compartilhamentos: 3,
-    avatar: 'https://randomuser.me/api/portraits/men/75.jpg',
+    avatar: "https://randomuser.me/api/portraits/men/75.jpg",
   },
   {
     id: 2,
-    autor: 'Ana Costa',
-    tempo: 'há 5 horas',
-    tipo: 'Reclamação',
-    categoria: 'Infraestrutura',
-    titulo: 'Buraco gigante na Av. Paulista',
-    descricao: 'Há semanas existe um buraco enorme que está causando acidentes. Já vi vários carros com pneus furados... Ver mais',
-    local: 'Av. Paulista, 1500',
-    imagem: 'https://images.unsplash.com/photo-1532974297617-c0dc1d77bc0a?q=80&w=1080&auto=format&fit=crop',
+    autor: "Ana Costa",
+    tempo: "há 5 horas",
+    tipo: "Reclamação",
+    categoria: "Infraestrutura",
+    titulo: "Buraco gigante na Av. Paulista",
+    descricao:
+      "Há semanas existe um buraco enorme que está causando acidentes. Já vi vários carros com pneus furados... Ver mais",
+    local: "Av. Paulista, 1500",
+    imagem:
+      "https://images.unsplash.com/photo-1532974297617-c0dc1d77bc0a?q=80&w=1080&auto=format&fit=crop",
     apoios: 67,
     comentarios: 15,
     compartilhamentos: 12,
-    avatar: 'https://randomuser.me/api/portraits/women/65.jpg',
+    avatar: "https://randomuser.me/api/portraits/women/65.jpg",
   },
 ];
 
-export default function FeedScreen({ user, onCreate }) {
-  const [cityName, setCityName] = React.useState('Sua Cidade');
+export default function FeedScreen({ user, onCreate, onProfile, focusPostId }) {
+  const [cityName, setCityName] = React.useState("Sua Cidade");
   const [posts, setPosts] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [commentTarget, setCommentTarget] = React.useState(null);
   const [supportingIds, setSupportingIds] = React.useState(new Set());
+  const [sharedIds, setSharedIds] = React.useState(new Set());
+  const listRef = React.useRef(null);
 
   React.useEffect(() => {
     let mounted = true;
     async function loadCityName() {
       if (user?.id_cidade) {
         const nome = await fetchCidadeNomeById(user.id_cidade);
-        if (mounted) setCityName(nome || 'Sua Cidade');
+        if (mounted) setCityName(nome || "Sua Cidade");
       }
     }
     loadCityName();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, [user]);
+
+  React.useEffect(() => {
+    if (!focusPostId || !Array.isArray(posts) || posts.length === 0) return;
+    const idx = posts.findIndex((p) => (p.id || p.id_post) === focusPostId);
+    if (idx >= 0 && listRef.current) {
+      try {
+        listRef.current.scrollToIndex({ index: idx, animated: true });
+      } catch (_) {
+        // fallback: scrollToOffset
+        listRef.current.scrollToOffset({
+          offset: Math.max(0, idx * 300),
+          animated: true,
+        });
+      }
+    }
+  }, [focusPostId, posts]);
 
   React.useEffect(() => {
     let mounted = true;
@@ -68,32 +104,39 @@ export default function FeedScreen({ user, onCreate }) {
         const res = await listPosts({ id_cidade: user?.id_cidade });
         const items = Array.isArray(res)
           ? res
-          : (Array.isArray(res?.posts) ? res.posts : []);
+          : Array.isArray(res?.posts)
+          ? res.posts
+          : [];
         let baseItems = items.length > 0 ? items : MOCK_POSTS;
         // Se houver posts reais do backend, buscar detalhes para anexar mídias
         if (Array.isArray(items) && items.length > 0) {
-          const detailed = await Promise.all(items.map(async (p) => {
-            const id = p.id || p.id_post;
-            if (!id) return p;
-            try {
-              const d = await getPost(id);
-              const full = d?.post || d;
-              const metrics = d?.metrics || {};
-              const apoiosCount = metrics?.apoios?.curtir || 0; // contamos 'curtir'
-              const comentariosCount = metrics?.comentarios || 0;
-              const compartilhamentosCount = metrics?.compartilhamentos || 0;
-              return full ? { 
-                ...p, 
-                ...full, 
-                apoios: apoiosCount,
-                comentarios: comentariosCount,
-                compartilhamentos: compartilhamentosCount,
-                metrics: metrics,
-              } : p;
-            } catch (_) {
-              return p;
-            }
-          }));
+          const detailed = await Promise.all(
+            items.map(async (p) => {
+              const id = p.id || p.id_post;
+              if (!id) return p;
+              try {
+                const d = await getPost(id);
+                const full = d?.post || d;
+                const metrics = d?.metrics || {};
+                const apoiosCount = metrics?.apoios?.curtir || 0; // contamos 'curtir'
+                const comentariosCount = metrics?.comentarios || 0;
+                const compartilhamentosCount = metrics?.compartilhamentos || 0;
+                return full
+                  ? {
+                      ...p,
+                      ...full,
+                      apoios: apoiosCount,
+                      comentarios: comentariosCount,
+                      compartilhamentos: compartilhamentosCount,
+                      metrics: metrics,
+                      apoio_atual: d?.apoio_atual ?? p.apoio_atual ?? null,
+                    }
+                  : p;
+              } catch (_) {
+                return p;
+              }
+            })
+          );
           baseItems = detailed;
         }
         if (mounted) setPosts(baseItems);
@@ -104,7 +147,9 @@ export default function FeedScreen({ user, onCreate }) {
       }
     }
     loadPosts();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, [user]);
 
   const handleSupport = async (item) => {
@@ -112,18 +157,38 @@ export default function FeedScreen({ user, onCreate }) {
     if (!id) return;
     // Evita cliques duplicados enquanto processa
     if (supportingIds.has(id)) return;
-    // Evita apoiar novamente se já apoiado
-    if (item.apoio_atual === 'curtir') return;
     try {
       setSupportingIds((prev) => new Set(prev).add(id));
-      const res = await supportPost(id, 'curtir');
-      setPosts((prev) => prev.map((p) => (p.id === id || p.id_post === id) ? { 
-        ...p, 
-        apoio_atual: res?.apoio_atual || 'curtir', 
-        apoios: res?.contagem?.curtir ?? ((p.apoios||0) + 1) 
-      } : p));
-    } catch (_) {}
-    finally {
+      if (item.apoio_atual === "curtir") {
+        const res = await removeSupport(id);
+        setPosts((prev) =>
+          prev.map((p) =>
+            p.id === id || p.id_post === id
+              ? {
+                  ...p,
+                  apoio_atual: null,
+                  apoios:
+                    res?.contagem?.curtir ?? Math.max((p.apoios || 0) - 1, 0),
+                }
+              : p
+          )
+        );
+      } else {
+        const res = await supportPost(id, "curtir");
+        setPosts((prev) =>
+          prev.map((p) =>
+            p.id === id || p.id_post === id
+              ? {
+                  ...p,
+                  apoio_atual: res?.apoio_atual || "curtir",
+                  apoios: res?.contagem?.curtir ?? (p.apoios || 0) + 1,
+                }
+              : p
+          )
+        );
+      }
+    } catch (_) {
+    } finally {
       setSupportingIds((prev) => {
         const next = new Set(prev);
         next.delete(id);
@@ -139,11 +204,23 @@ export default function FeedScreen({ user, onCreate }) {
       const res = await sharePost(id);
       const url = res?.share_url;
       if (url) {
-        try { await Share.share({ message: url }); } catch (_) {}
+        try {
+          await Share.share({ message: url });
+        } catch (_) {}
       }
-      setPosts((prev) => prev.map((p) => (p.id === id || p.id_post === id) ? { 
-        ...p, compartilhamentos: res?.total_compartilhamentos ?? ((p.compartilhamentos || 0) + 1) 
-      } : p));
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.id === id || p.id_post === id
+            ? {
+                ...p,
+                compartilhamentos:
+                  res?.total_compartilhamentos ??
+                  (p.compartilhamentos || 0) + 1,
+              }
+            : p
+        )
+      );
+      setSharedIds((prev) => new Set(prev).add(id));
     } catch (_) {}
   };
 
@@ -151,19 +228,28 @@ export default function FeedScreen({ user, onCreate }) {
     setCommentTarget(item);
   };
 
-  
   return (
-    <SafeAreaView style={styles.container} edges={['top','bottom']}>
+    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
       <View style={styles.topBar}>
-        <TouchableOpacity style={styles.iconBtn}><MaterialIcons name="filter-list" size={22} color="#0a4b9e" /></TouchableOpacity>
+        <TouchableOpacity style={styles.iconBtn} onPress={onProfile}>
+          <MaterialIcons name="person" size={22} color="#0a4b9e" />
+        </TouchableOpacity>
         <Text style={styles.topTitle}>{`Feed ${cityName}`}</Text>
-        <TouchableOpacity style={styles.iconBtn} onPress={onCreate}><MaterialIcons name="add" size={22} color="#0a4b9e" /></TouchableOpacity>
+        <TouchableOpacity style={styles.iconBtn} onPress={onCreate}>
+          <MaterialIcons name="add" size={22} color="#0a4b9e" />
+        </TouchableOpacity>
       </View>
       <FlatList
         contentContainerStyle={{ padding: 16 }}
+        ref={listRef}
         data={posts}
         keyExtractor={(item) => String(item.id || item.id_post)}
         refreshing={loading}
+        getItemLayout={(data, index) => ({
+          length: 280,
+          offset: 280 * index,
+          index,
+        })}
         onRefresh={() => {
           // força recarga
           const u = user;
@@ -172,31 +258,40 @@ export default function FeedScreen({ user, onCreate }) {
               const res = await listPosts({ id_cidade: u?.id_cidade });
               const items = Array.isArray(res)
                 ? res
-                : (Array.isArray(res?.posts) ? res.posts : []);
+                : Array.isArray(res?.posts)
+                ? res.posts
+                : [];
               let baseItems = items.length > 0 ? items : MOCK_POSTS;
               if (Array.isArray(items) && items.length > 0) {
-                const detailed = await Promise.all(items.map(async (p) => {
-                  const id = p.id || p.id_post;
-                  if (!id) return p;
-                  try {
-                    const d = await getPost(id);
-                    const full = d?.post || d;
-                    const metrics = d?.metrics || {};
-                    const apoiosCount = metrics?.apoios?.curtir || 0;
-                    const comentariosCount = metrics?.comentarios || 0;
-                    const compartilhamentosCount = metrics?.compartilhamentos || 0;
-                    return full ? { 
-                      ...p, 
-                      ...full, 
-                      apoios: apoiosCount,
-                      comentarios: comentariosCount,
-                      compartilhamentos: compartilhamentosCount,
-                      metrics: metrics, // manter também para consumo no PostCard
-                    } : p;
-                  } catch (_) {
-                    return p;
-                  }
-                }));
+                const detailed = await Promise.all(
+                  items.map(async (p) => {
+                    const id = p.id || p.id_post;
+                    if (!id) return p;
+                    try {
+                      const d = await getPost(id);
+                      const full = d?.post || d;
+                      const metrics = d?.metrics || {};
+                      const apoiosCount = metrics?.apoios?.curtir || 0;
+                      const comentariosCount = metrics?.comentarios || 0;
+                      const compartilhamentosCount =
+                        metrics?.compartilhamentos || 0;
+                      return full
+                        ? {
+                            ...p,
+                            ...full,
+                            apoios: apoiosCount,
+                            comentarios: comentariosCount,
+                            compartilhamentos: compartilhamentosCount,
+                            metrics: metrics, // manter também para consumo no PostCard
+                            apoio_atual:
+                              d?.apoio_atual ?? p.apoio_atual ?? null,
+                          }
+                        : p;
+                    } catch (_) {
+                      return p;
+                    }
+                  })
+                );
                 baseItems = detailed;
               }
               setPosts(baseItems);
@@ -209,6 +304,7 @@ export default function FeedScreen({ user, onCreate }) {
           <PostCard
             post={item}
             supporting={supportingIds.has(item.id || item.id_post)}
+            sharedByMe={sharedIds.has(item.id || item.id_post)}
             onSupport={() => handleSupport(item)}
             onComment={() => handleComment(item)}
             onShare={() => handleShare(item)}
@@ -221,9 +317,16 @@ export default function FeedScreen({ user, onCreate }) {
           onClose={() => setCommentTarget(null)}
           onSubmitted={() => {
             const id = commentTarget.id || commentTarget.id_post;
-            setPosts((prev) => prev.map((p) => (p.id === id || p.id_post === id) ? { 
-              ...p, comentarios: (p.comentarios || 0) + 1 
-            } : p));
+            setPosts((prev) =>
+              prev.map((p) =>
+                p.id === id || p.id_post === id
+                  ? {
+                      ...p,
+                      comentarios: (p.comentarios || 0) + 1,
+                    }
+                  : p
+              )
+            );
             setCommentTarget(null);
           }}
         />
@@ -233,9 +336,27 @@ export default function FeedScreen({ user, onCreate }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f2f6fb' },
-  topBar: { height: 56, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e6eaf0', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12 },
-  topTitle: { fontSize: 16, fontWeight: '700', color: '#0a4b9e' },
-  iconBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 18, borderWidth: 1, borderColor: '#e6eaf0', backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: "#f2f6fb" },
+  topBar: {
+    height: 56,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e6eaf0",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 12,
+  },
+  topTitle: { fontSize: 16, fontWeight: "700", color: "#0a4b9e" },
+  iconBtn: {
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#e6eaf0",
+    backgroundColor: "#fff",
+  },
   // Comentários agora são geridos pelo CommentsSheet
 });

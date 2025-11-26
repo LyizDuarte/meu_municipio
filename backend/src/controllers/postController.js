@@ -5,6 +5,8 @@ const {
   getAllPostsWithFilters,
   updatePostData,
   deletePostById,
+  getUserLikedPosts,
+  getUserComments,
   addCommentToPost,
   listCommentsForPost,
   deleteCommentFromPost,
@@ -64,11 +66,24 @@ async function createPost(req, res) {
   }
 }
 
+const jwt = require('jsonwebtoken');
 async function getPost(req, res) {
   try {
     const { id } = req.params;
-    const post = await getPostWithDetails(parseInt(id));
-    
+    let id_usuario = null;
+    // Tenta identificar usuário autenticado via Authorization: Bearer (opcional)
+    try {
+      const authHeader = req.headers['authorization'] || req.headers['Authorization'];
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7);
+        const secret = process.env.JWT_SECRET || 'jwt_dev_secret_change_me';
+        const payload = jwt.verify(token, secret);
+        id_usuario = payload?.id_usuario || null;
+      }
+    } catch (_) {
+      id_usuario = null;
+    }
+    const post = await getPostWithDetails(parseInt(id), id_usuario);
     return res.status(200).json(post);
   } catch (err) {
     const status = err.status || 500;
@@ -184,6 +199,32 @@ async function getPostsByUser(req, res) {
   }
 }
 
+async function getPostsLikedByUser(req, res) {
+  try {
+    const { id_usuario } = req.params;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const posts = await getUserLikedPosts(parseInt(id_usuario), page, limit);
+    return res.status(200).json({ posts, pagination: { page, limit, total: posts.length } });
+  } catch (err) {
+    const status = err.status || 500;
+    return res.status(status).json({ message: err.message || 'Erro interno' });
+  }
+}
+
+async function getPostsCommentedByUser(req, res) {
+  try {
+    const { id_usuario } = req.params;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const comentarios = await getUserComments(parseInt(id_usuario), page, limit);
+    return res.status(200).json({ comentarios, pagination: { page, limit, total: comentarios.length } });
+  } catch (err) {
+    const status = err.status || 500;
+    return res.status(status).json({ message: err.message || 'Erro interno' });
+  }
+}
+
 async function addComment(req, res) {
   try {
     const { id } = req.params; // id_post
@@ -267,6 +308,8 @@ module.exports = {
   updatePost,
   deletePost,
   getPostsByUser,
+  getPostsLikedByUser,
+  getPostsCommentedByUser,
   addComment,
   getComments,
   deleteComment,

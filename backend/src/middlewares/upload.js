@@ -46,6 +46,8 @@ const upload = multer({
 
 // Middleware para upload múltiplo
 const uploadMultiple = upload.array('midias', 5);
+// Middleware para upload de avatar (arquivo único)
+const uploadSingleAvatar = upload.single('avatar');
 
 // Middleware com tratamento de erro
 const uploadMiddleware = (req, res, next) => {
@@ -56,6 +58,24 @@ const uploadMiddleware = (req, res, next) => {
       }
       if (err.code === 'LIMIT_FILE_COUNT') {
         return res.status(400).json({ message: 'Muitos arquivos. Máximo 5 arquivos por upload.' });
+      }
+      if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+        return res.status(400).json({ message: 'Campo de arquivo inesperado.' });
+      }
+      return res.status(400).json({ message: 'Erro no upload: ' + err.message });
+    } else if (err) {
+      return res.status(400).json({ message: err.message });
+    }
+    next();
+  });
+};
+
+// Middleware de avatar com tratamento de erro
+const uploadAvatarMiddleware = (req, res, next) => {
+  uploadSingleAvatar(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ message: 'Arquivo muito grande. Máximo 10MB.' });
       }
       if (err.code === 'LIMIT_UNEXPECTED_FILE') {
         return res.status(400).json({ message: 'Campo de arquivo inesperado.' });
@@ -85,6 +105,7 @@ const deleteFile = (filename) => {
 
 module.exports = {
   uploadMiddleware,
+  uploadAvatarMiddleware,
   getMediaUrl,
   deleteFile
 };

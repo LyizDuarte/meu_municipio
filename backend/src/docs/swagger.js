@@ -118,6 +118,7 @@ const swaggerDocument = {
               compartilhamentos: { type: "integer" },
             },
           },
+          apoio_atual: { type: "string", nullable: true, description: "Estado de apoio atual do usuário autenticado (se token enviado)" },
         },
       },
       CommentsListResponse: {
@@ -833,21 +834,20 @@ const swaggerDocument = {
         },
       },
     },
-  },
-
-  "/locations/estados": {
-    get: {
-      tags: ["Locations"],
-      summary: "Listar estados",
-      responses: {
-        200: {
-          description: "Lista de estados",
-          content: {
-            "application/json": {
-              schema: {
-                type: "object",
-                properties: {
-                  estados: { type: "array", items: { type: "object" } },
+    "/locations/estados": {
+      get: {
+        tags: ["Locations"],
+        summary: "Listar estados",
+        responses: {
+          200: {
+            description: "Lista de estados",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    estados: { type: "array", items: { type: "object" } },
+                  },
                 },
               },
             },
@@ -855,43 +855,91 @@ const swaggerDocument = {
         },
       },
     },
-  },
-  "/locations/cidades": {
-    get: {
-      tags: ["Locations"],
-      summary: "Listar cidades por estado",
-      parameters: [
-        {
-          name: "id_estado",
-          in: "query",
-          required: true,
-          schema: { type: "integer" },
-        },
-      ],
-      responses: {
-        200: {
-          description: "Lista de cidades",
-          content: {
-            "application/json": {
-              schema: {
-                type: "object",
-                properties: {
-                  cidades: { type: "array", items: { type: "object" } },
+    "/locations/cidades": {
+      get: {
+        tags: ["Locations"],
+        summary: "Listar cidades por estado",
+        parameters: [
+          {
+            name: "id_estado",
+            in: "query",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        responses: {
+          200: {
+            description: "Lista de cidades",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    cidades: { type: "array", items: { type: "object" } },
+                  },
                 },
               },
             },
           },
-        },
-        400: {
-          description: "id_estado inválido",
-          content: {
-            "application/json": {
-              schema: { $ref: "#/components/schemas/ErrorResponse" },
+          400: {
+            description: "id_estado inválido",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
             },
           },
         },
       },
     },
+    "/posts/user/{id_usuario}/likes": {
+      get: {
+        tags: ["Posts"],
+        summary: "Listar posts curtidos pelo usuário",
+        parameters: [
+          { name: "id_usuario", in: "path", required: true, schema: { type: "integer" } },
+          { name: "page", in: "query", schema: { type: "integer", default: 1 } },
+          { name: "limit", in: "query", schema: { type: "integer", default: 10 } }
+        ],
+        responses: {
+          200: {
+            description: "Lista de posts curtidos",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    posts: { type: "array", items: { type: "object" } },
+                    pagination: { type: "object" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/posts/user/{id_usuario}/comments": {
+      get: {
+        tags: ["Comments"],
+        summary: "Listar comentários feitos pelo usuário",
+        parameters: [
+          { name: "id_usuario", in: "path", required: true, schema: { type: "integer" } },
+          { name: "page", in: "query", schema: { type: "integer", default: 1 } },
+          { name: "limit", in: "query", schema: { type: "integer", default: 10 } }
+        ],
+        responses: {
+          200: {
+            description: "Lista de comentários do usuário",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/CommentsListResponse" }
+              }
+            }
+          }
+        }
+      }
+    }
   },
 };
 

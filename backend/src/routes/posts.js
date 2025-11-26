@@ -8,6 +8,8 @@ const {
   updatePost,
   deletePost,
   getPostsByUser,
+  getPostsLikedByUser,
+  getPostsCommentedByUser,
   addComment,
   getComments,
   deleteComment,
@@ -20,8 +22,11 @@ const { uploadMiddleware } = require('../middlewares/upload');
 
 // Rotas públicas
 router.get('/', getAllPosts);
-router.get('/:id', getPost);
+// IMPORTANTE: rotas de usuário devem vir ANTES de '/:id' para não colidir
 router.get('/user/:id_usuario', getPostsByUser);
+router.get('/user/:id_usuario/likes', getPostsLikedByUser);
+router.get('/user/:id_usuario/comments', getPostsCommentedByUser);
+router.get('/:id', getPost);
 
 // Comentários
 router.get('/:id/comments', getComments); // listar comentários de um post
