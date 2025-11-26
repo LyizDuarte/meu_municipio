@@ -1,14 +1,21 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
-import { addComment, getComments } from '../api/posts';
+import React from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  TextInput,
+} from "react-native";
+import { MaterialIcons } from "@expo/vector-icons";
+import { addComment, getComments } from "../api/posts";
 
 export default function CommentsSheet({ post, onClose, onSubmitted }) {
   const [comments, setComments] = React.useState([]);
   const [page, setPage] = React.useState(1);
   const [total, setTotal] = React.useState(0);
   const [loading, setLoading] = React.useState(false);
-  const [draft, setDraft] = React.useState('');
+  const [draft, setDraft] = React.useState("");
 
   const id = post?.id || post?.id_post;
 
@@ -18,7 +25,10 @@ export default function CommentsSheet({ post, onClose, onSubmitted }) {
       if (!id) return;
       try {
         setLoading(true);
-        const { comentarios, pagination } = await getComments(id, { page: 1, limit: 10 });
+        const { comentarios, pagination } = await getComments(id, {
+          page: 1,
+          limit: 10,
+        });
         if (!mounted) return;
         setComments(Array.isArray(comentarios) ? comentarios : []);
         setTotal(pagination?.total || 0);
@@ -34,15 +44,17 @@ export default function CommentsSheet({ post, onClose, onSubmitted }) {
       }
     }
     if (post) {
-      setDraft('');
+      setDraft("");
       loadInitial();
     } else {
       setComments([]);
-      setDraft('');
+      setDraft("");
       setTotal(0);
       setPage(1);
     }
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, [id]);
 
   if (!post) return null;
@@ -53,12 +65,16 @@ export default function CommentsSheet({ post, onClose, onSubmitted }) {
     const next = page + 1;
     try {
       setLoading(true);
-      const { comentarios, pagination } = await getComments(id, { page: next, limit: 10 });
+      const { comentarios, pagination } = await getComments(id, {
+        page: next,
+        limit: 10,
+      });
       const more = Array.isArray(comentarios) ? comentarios : [];
       setComments((prev) => [...prev, ...more]);
       setPage(next);
       setTotal(pagination?.total || total);
-    } catch (_) {} finally {
+    } catch (_) {
+    } finally {
       setLoading(false);
     }
   }
@@ -67,9 +83,9 @@ export default function CommentsSheet({ post, onClose, onSubmitted }) {
     if (!id || !draft.trim()) return;
     try {
       await addComment(id, draft.trim());
-      setDraft('');
+      setDraft("");
       // Refresca contagem externa
-      if (typeof onSubmitted === 'function') onSubmitted();
+      if (typeof onSubmitted === "function") onSubmitted();
       // Opcional: poderia inserir item na lista local, mas requer dados do backend
     } catch (_) {}
   }
@@ -79,24 +95,42 @@ export default function CommentsSheet({ post, onClose, onSubmitted }) {
       <Text style={styles.title}>Comentários</Text>
       <View style={{ maxHeight: 220 }}>
         {loading && comments.length === 0 ? (
-          <Text style={{ color: '#6b7280' }}>Carregando comentários...</Text>
+          <Text style={{ color: "#6b7280" }}>Carregando comentários...</Text>
         ) : (
           <FlatList
             data={comments}
             keyExtractor={(c) => String(c.id_comentario || Math.random())}
             renderItem={({ item: c }) => (
               <View style={{ paddingVertical: 6 }}>
-                <Text style={{ fontWeight: '600', color: '#0a4b9e' }}>{c.autor_nome || 'Usuário'}</Text>
-                <Text style={{ color: '#374151' }}>{c.conteudo}</Text>
+                <Text style={{ fontWeight: "600", color: "#0a4b9e" }}>
+                  {c.autor_nome || "Usuário"}
+                </Text>
+                <Text style={{ color: "#374151" }}>{c.conteudo}</Text>
+                <Text style={{ color: "#6b7280", fontSize: 12 }}>
+                  {c.data_comentario
+                    ? new Date(c.data_comentario).toLocaleString("pt-BR", {
+                        timeZone: "America/Sao_Paulo",
+                      })
+                    : ""}
+                </Text>
               </View>
             )}
-            ListFooterComponent={(
+            ListFooterComponent={
               comments.length < total ? (
-                <TouchableOpacity style={[styles.iconBtn, { alignSelf: 'center', marginTop: 8 }]} onPress={loadMore} disabled={loading}>
-                  <Text style={{ color: '#0a4b9e', fontWeight: '600' }}>{loading ? 'Carregando...' : 'Carregar mais'}</Text>
+                <TouchableOpacity
+                  style={[
+                    styles.iconBtn,
+                    { alignSelf: "center", marginTop: 8 },
+                  ]}
+                  onPress={loadMore}
+                  disabled={loading}
+                >
+                  <Text style={{ color: "#0a4b9e", fontWeight: "600" }}>
+                    {loading ? "Carregando..." : "Carregar mais"}
+                  </Text>
                 </TouchableOpacity>
               ) : null
-            )}
+            }
           />
         )}
       </View>
@@ -108,8 +142,17 @@ export default function CommentsSheet({ post, onClose, onSubmitted }) {
         onChangeText={setDraft}
         maxLength={300}
       />
-      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 8 }}>
-        <TouchableOpacity style={[styles.iconBtn, { marginRight: 8 }]} onPress={onClose}>
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "flex-end",
+          marginTop: 8,
+        }}
+      >
+        <TouchableOpacity
+          style={[styles.iconBtn, { marginRight: 8 }]}
+          onPress={onClose}
+        >
           <MaterialIcons name="close" size={18} color="#0a4b9e" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.iconBtn} onPress={submit}>
@@ -121,9 +164,37 @@ export default function CommentsSheet({ post, onClose, onSubmitted }) {
 }
 
 const styles = StyleSheet.create({
-  container: { position: 'absolute', left: 16, right: 16, bottom: 16, backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: '#e6eaf0', padding: 12, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 8 },
-  title: { fontWeight: '700', color: '#0a4b9e', marginBottom: 8 },
-  input: { borderWidth: 1, borderColor: '#e6eaf0', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: '#fff' },
-  iconBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 18, borderWidth: 1, borderColor: '#e6eaf0', backgroundColor: '#fff' },
+  container: {
+    position: "absolute",
+    left: 16,
+    right: 16,
+    bottom: 16,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#e6eaf0",
+    padding: 12,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+  },
+  title: { fontWeight: "700", color: "#0a4b9e", marginBottom: 8 },
+  input: {
+    borderWidth: 1,
+    borderColor: "#e6eaf0",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: "#fff",
+  },
+  iconBtn: {
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#e6eaf0",
+    backgroundColor: "#fff",
+  },
 });
-

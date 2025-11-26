@@ -331,7 +331,10 @@ export default function ProfileScreen({ user, onBack, onUpdated, onOpenPost }) {
                 }}
               >
                 <Text style={styles.commentMeta}>
-                  Comentado em {new Date(item.data_comentario).toLocaleString()}
+                  Comentado em{" "}
+                  {new Date(item.data_comentario).toLocaleString("pt-BR", {
+                    timeZone: "America/Sao_Paulo",
+                  })}
                 </Text>
                 <TouchableOpacity
                   style={styles.viewPostBtn}
@@ -405,6 +408,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: "#e6eaf0",
+    marginBottom: 12,
   },
   row: { flexDirection: "row", alignItems: "center", gap: 12 },
   avatar: {

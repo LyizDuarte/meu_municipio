@@ -46,6 +46,11 @@ export default function PostCard({
     .map((m) => m.url || m.midia_url)
     .filter(Boolean)
     .map((u) => (u.startsWith("http") ? u : `${mediaBase}${u}`));
+  const timeText = post.data_criacao
+    ? new Date(post.data_criacao).toLocaleString("pt-BR", {
+        timeZone: "America/Sao_Paulo",
+      })
+    : "";
   const comentariosCount =
     typeof post.comentarios === "number"
       ? post.comentarios
@@ -78,7 +83,7 @@ export default function PostCard({
           <Text style={styles.author}>
             {post.autor || post.autor_nome || "Usuário"}
           </Text>
-          <Text style={styles.time}>{post.tempo || ""}</Text>
+          <Text style={styles.time}>{timeText}</Text>
         </View>
         <View
           style={[
