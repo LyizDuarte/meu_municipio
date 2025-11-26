@@ -295,6 +295,7 @@ const swaggerDocument = {
           },
           { name: "id_categoria", in: "query", schema: { type: "integer" } },
           { name: "id_cidade", in: "query", schema: { type: "integer" } },
+          { name: "titulo", in: "query", schema: { type: "string" } },
           {
             name: "page",
             in: "query",

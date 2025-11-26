@@ -123,7 +123,8 @@ async function getAllPosts(req, res) {
       tipo_post: req.query.tipo_post,
       status_post: req.query.status_post,
       id_categoria: req.query.id_categoria,
-      id_cidade: req.query.id_cidade
+      id_cidade: req.query.id_cidade,
+      titulo: req.query.titulo
     };
     
     const posts = await getAllPostsWithFilters(filters, page, limit);

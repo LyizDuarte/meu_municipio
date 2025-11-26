@@ -9,7 +9,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
 import PostCard from "../components/PostCard";
-import { fetchCidadeNomeById } from "../api/client";
+import { fetchCidadeNomeById, fetchCategorias } from "../api/client";
 import {
   listPosts,
   getPost,
@@ -17,6 +17,8 @@ import {
   removeSupport,
   sharePost,
 } from "../api/posts";
+import { TextInput } from "react-native";
+import { Picker } from "@react-native-picker/picker";
 import { Share } from "react-native";
 import CommentsSheet from "../components/CommentsSheet";
 
@@ -65,6 +67,10 @@ export default function FeedScreen({ user, onCreate, onProfile, focusPostId }) {
   const [supportingIds, setSupportingIds] = React.useState(new Set());
   const [sharedIds, setSharedIds] = React.useState(new Set());
   const listRef = React.useRef(null);
+  const [categorias, setCategorias] = React.useState([]);
+  const [categoriaId, setCategoriaId] = React.useState(null);
+  const [tipoPost, setTipoPost] = React.useState("todos");
+  const [searchTerm, setSearchTerm] = React.useState("");
 
   React.useEffect(() => {
     let mounted = true;
@@ -79,6 +85,17 @@ export default function FeedScreen({ user, onCreate, onProfile, focusPostId }) {
       mounted = false;
     };
   }, [user]);
+
+  React.useEffect(() => {
+    (async () => {
+      try {
+        const list = await fetchCategorias();
+        setCategorias(Array.isArray(list) ? list : []);
+      } catch (_) {
+        setCategorias([]);
+      }
+    })();
+  }, []);
 
   React.useEffect(() => {
     if (!focusPostId || !Array.isArray(posts) || posts.length === 0) return;
@@ -101,7 +118,12 @@ export default function FeedScreen({ user, onCreate, onProfile, focusPostId }) {
     async function loadPosts() {
       setLoading(true);
       try {
-        const res = await listPosts({ id_cidade: user?.id_cidade });
+        const params = { id_cidade: user?.id_cidade };
+        if (categoriaId) params.id_categoria = categoriaId;
+        if (tipoPost && tipoPost !== "todos") params.tipo_post = tipoPost;
+        if (searchTerm && searchTerm.trim().length > 0)
+          params.titulo = searchTerm.trim();
+        const res = await listPosts(params);
         const items = Array.isArray(res)
           ? res
           : Array.isArray(res?.posts)
@@ -150,7 +172,7 @@ export default function FeedScreen({ user, onCreate, onProfile, focusPostId }) {
     return () => {
       mounted = false;
     };
-  }, [user]);
+  }, [user, categoriaId, tipoPost, searchTerm]);
 
   const handleSupport = async (item) => {
     const id = item.id || item.id_post;
@@ -239,6 +261,93 @@ export default function FeedScreen({ user, onCreate, onProfile, focusPostId }) {
           <MaterialIcons name="add" size={22} color="#0a4b9e" />
         </TouchableOpacity>
       </View>
+      <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
+        <View style={{ backgroundColor: "#fff", borderRadius: 8 }}>
+          <Picker
+            selectedValue={categoriaId}
+            onValueChange={(v) => setCategoriaId(v || null)}
+          >
+            <Picker.Item label="Todas as categorias" value={null} />
+            {categorias.map((c) => (
+              <Picker.Item
+                key={c.id_categoria}
+                label={c.nome_categoria}
+                value={c.id_categoria}
+              />
+            ))}
+          </Picker>
+        </View>
+        <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
+          <TouchableOpacity
+            style={{
+              paddingHorizontal: 10,
+              paddingVertical: 6,
+              borderRadius: 8,
+              backgroundColor: tipoPost === "todos" ? "#0a4b9e" : "#eef3fb",
+            }}
+            onPress={() => setTipoPost("todos")}
+          >
+            <Text
+              style={{
+                color: tipoPost === "todos" ? "#fff" : "#0a4b9e",
+                fontWeight: "700",
+              }}
+            >
+              Todos
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={{
+              paddingHorizontal: 10,
+              paddingVertical: 6,
+              borderRadius: 8,
+              backgroundColor: tipoPost === "sugestao" ? "#0a4b9e" : "#eef3fb",
+            }}
+            onPress={() => setTipoPost("sugestao")}
+          >
+            <Text
+              style={{
+                color: tipoPost === "sugestao" ? "#fff" : "#0a4b9e",
+                fontWeight: "700",
+              }}
+            >
+              Sugestões
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={{
+              paddingHorizontal: 10,
+              paddingVertical: 6,
+              borderRadius: 8,
+              backgroundColor:
+                tipoPost === "reclamacao" ? "#0a4b9e" : "#eef3fb",
+            }}
+            onPress={() => setTipoPost("reclamacao")}
+          >
+            <Text
+              style={{
+                color: tipoPost === "reclamacao" ? "#fff" : "#0a4b9e",
+                fontWeight: "700",
+              }}
+            >
+              Reclamações
+            </Text>
+          </TouchableOpacity>
+        </View>
+        <TextInput
+          value={searchTerm}
+          onChangeText={setSearchTerm}
+          placeholder="Buscar por título"
+          style={{
+            backgroundColor: "#fff",
+            borderRadius: 8,
+            paddingHorizontal: 12,
+            paddingVertical: 8,
+            marginTop: 8,
+          }}
+        />
+      </View>
+
       <FlatList
         contentContainerStyle={{ padding: 16 }}
         ref={listRef}

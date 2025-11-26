@@ -185,6 +185,10 @@ async function getAllPostsWithFilters(filters = {}, page = 1, limit = 20) {
     validFilters.id_cidade = parseInt(filters.id_cidade);
   }
 
+  if (typeof filters.titulo === "string" && filters.titulo.trim().length > 0) {
+    validFilters.titulo = filters.titulo.trim();
+  }
+
   const posts = await findAllPosts(limit, offset, validFilters);
   return posts;
 }

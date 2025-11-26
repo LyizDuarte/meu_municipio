@@ -117,6 +117,15 @@ async function findAllPosts(limit = 20, offset = 0, filters = {}) {
     params.push(filters.status_post);
   }
 
+  if (
+    filters.titulo &&
+    typeof filters.titulo === "string" &&
+    filters.titulo.trim().length > 0
+  ) {
+    query += " AND p.titulo LIKE ?";
+    params.push(`%${filters.titulo}%`);
+  }
+
   query += " ORDER BY p.data_criacao DESC LIMIT ? OFFSET ?";
   params.push(limit, offset);
 
